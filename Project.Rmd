@@ -9,15 +9,75 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+### Comentarios
+- Casi todos son Full Time
+- Nuevas columnas: 
+
+
+
+
+
 ## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+df <- read.csv("salaries.csv", stringsAsFactors = TRUE)
 ```
+
+```{r}
+summary(df)
+```
+
+```{r}
+levels(factor(df$job_title))  
+```
+
+```{r}
+
+y_2020 <- df[df$work_year == 2020,]
+y_2021 <- df[df$work_year == 2021,]
+y_2022 <- df[df$work_year == 2022,]
+
+y_2020 <- y_2020 %>% group_by(remote_ratio) %>% summarise(count = n())
+y_2021 <- y_2021 %>% group_by(remote_ratio) %>% summarise(count = n())
+y_2022 <- y_2022 %>% group_by(remote_ratio) %>% summarise(count = n())
+
+y_2020$percentage <- y_2020$count / sum(y_2020$count) * 100
+y_2021$percentage <- y_2021$count / sum(y_2021$count) * 100
+y_2022$percentage <- y_2022$count / sum(y_2022$count) * 100
+
+y_2020$work_year <- 2020
+y_2021$work_year <- 2021
+y_2022$work_year <- 2022
+
+y <- rbind(y_2020, y_2021, y_2022)
+
+ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remote_ratio)) + geom_line() + geom_point() + labs(x = "Work Year", y = "Percentage of Remote Ratio", title = "Remote Ratio by Work Year") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+
+
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
 
 ## Including Plots
 

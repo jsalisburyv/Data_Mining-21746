@@ -13,6 +13,10 @@ knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(dplyr)
 library(ggdist)
+
+library(networkD3)
+
+
 ```
 
 ### Comentarios
@@ -28,8 +32,6 @@ str(df)
 ```
 
 
-## R Markdown
-
 
 ```{r}
 anyNA(df)
@@ -43,10 +45,78 @@ levels(df$remote_ratio) <- list("Office" = 0, "Hybrid" = 50,  "Remote" = 100)
 
 df$salaryGroup <- cut(df$salary_in_usd, c(0, 25000, 50000, 75000, 100000, 125000, 150000, 200000, 250000, 1000000))
 df$salaryGroup <- as.factor(df$salaryGroup)
+```
+
+```{r}
+# group df$employee_residence to different regions in the world. The data is in ISO 3166-1 alpha-2 format. Regions like North America, Europe, Asia, etc.
+df$employee_region <- as.factor(df$employee_residence)
+levels(df$employee_region) <- list(  
+  "North America" = c("US", "CA", "MX"),   
+  "South America" = c("AR", "BO", "BR", "CL", "CO", "EC", "PE", "PY", "UY", "VE"),   
+  "Central America" = c("BZ", "CR", "DO", "GT", "HN", "NI", "PA", "PR", "SV"),
+  "Europe" = c("AT", "AX", "BE", "BG", "CH", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GB", "GR", "HR", "HU", "IE", "IS", "IT", "JE", "LT", "LU", "LV", "MD", "MT", "NL", "NO", "PL", "PT", "RO", "RU", "RS", "SE", "SI", "SK", "TR", "UA"),
+  "Asia" = c("AE", "AF", "AM", "AZ", "BD", "BH", "BN", "CN", "GE", "HK", "ID", "IL", "IN", "IQ", "IR", "JO", "JP", "KG", "KH", "KP", "KR", "KW", "KZ", "LA", "LB", "LK", "MM", "MN", "MO", "MV", "MY", "NP", "OM", "PH", "PK", "QA", "SA", "SG", "SY", "TH", "TJ", "TM", "TW", "UZ", "VN", "YE"),   
+  "Africa" = c("AO", "BF", "BI", "BJ", "BW", "CD", "CF", "CG", "CI", "CM", "CV", "DJ", "DZ", "EG", "EH", "ER", "ET", "GA", "GH", "GM", "GN", "GQ", "GW", "KE", "KM", "LR", "LS", "LY", "MA", "MG", "ML", "MR", "MU", "MW", "MZ", "NA", "NE", "NG", "RE", "RW", "SC", "SD", "SH", "SL", "SN", "SO", "ST", "SZ", "TD", "TG", "TN", "TZ", "UG", "YT", "ZA", "ZM", "ZW"), 
+  "Oceania" = c("AU", "FJ", "FM", "GU", "KI", "MH", "MP", "NC", "NF", "NR", "NU", "NZ", "PF", "PG", "PN", "PW", "SB", "TK", "TO", "TV", "UM", "VU", "WF", "WS"))
+
+df$company_region <- as.factor(df$company_location)
+levels(df$company_region) <- list(  
+  "North America" = c("US", "CA", "MX"),   
+  "South America" = c("AR", "BO", "BR", "CL", "CO", "EC", "PE", "PY", "UY", "VE"),   
+  "Central America" = c("BZ", "CR", "DO", "GT", "HN", "NI", "PA", "PR", "SV"),
+  "Europe" = c("AT", "AL", "AX", "BE", "BG", "CH", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GB", "GR", "HR", "HU", "IE", "IS", "IT", "JE", "LT", "LU", "LV", "MD", "MT", "NL", "NO", "PL", "PT", "RO", "RU", "RS", "SE", "SI", "SK", "TR", "UA"),
+  "Asia" = c("AE", "AF", "AM", "AZ", "BD", "BH", "BN", "CN", "GE", "HK", "ID", "IL", "IN", "IQ", "IR", "JO", "JP", "KG", "KH", "KP", "KR", "KW", "KZ", "LA", "LB", "LK", "MM", "MN", "MO", "MV", "MY", "NP", "OM", "PH", "PK", "QA", "SA", "SG", "SY", "TH", "TJ", "TM", "TW", "UZ", "VN", "YE"),   
+  "Africa" = c("AO", "BF", "BI", "BJ", "BW", "CD", "CF", "CG", "CI", "CM", "CV", "DJ", "DZ", "EG", "EH", "ER", "ET", "GA", "GH", "GM", "GN", "GQ", "GW", "KE", "KM", "LR", "LS", "LY", "MA", "MG", "ML", "MR", "MU", "MW", "MZ", "NA", "NE", "NG", "RE", "RW", "SC", "SD", "SH", "SL", "SN", "SO", "ST", "SZ", "TD", "TG", "TN", "TZ", "UG", "YT", "ZA", "ZM", "ZW"), 
+  "Oceania" = c("AU", "AS", "FJ", "FM", "GU", "KI", "MH", "MP", "NC", "NF", "NR", "NU", "NZ", "PF", "PG", "PN", "PW", "SB", "TK", "TO", "TV", "UM", "VU", "WF", "WS"))
 
 summary(df)
-str(df)
 ```
+
+```{r}
+
+# I've got two columns, one with the company region and another with the employee region. I want to create a sankey diagram / migration flow chart
+# that shows the number of employees that are from a certain region and work in a certain region.
+# For it I have to create an auxiliar data frame with the number of employees that are from a certain region and work in a certain region.
+
+# Create the auxiliar data frame where the rows and columns are the regions and the values are the number of employees that are from a certain region and work in a certain region.
+# The auxiliar data frame will have the same number of rows and columns as the number of regions.
+aux <- data.frame(matrix(0, nrow = length(levels(df$company_region)), ncol = length(levels(df$company_region))))
+colnames(aux) <- levels(df$company_region)
+rownames(aux) <- levels(df$company_region)
+
+# Now calculate the number of employees that are from a certain region and work in a certain region.
+for (i in 1:nrow(aux)) {
+  for (j in 1:ncol(aux)) {
+    aux[i, j] <- length(which(df$company_region == colnames(aux)[j] & df$employee_region == rownames(aux)[i]))
+  }
+}
+
+# I need a long format
+data_long <- aux %>%
+  rownames_to_column %>%
+  gather(key = 'key', value = 'value', -rowname) %>%
+  filter(value > 0)
+colnames(data_long) <- c("source", "target", "value")
+data_long$target <- paste(data_long$target, " ", sep="")
+
+# From these flows we need to create a node data frame: it lists every entities involved in the flow
+nodes <- data.frame(name=c(as.character(data_long$source), as.character(data_long$target)) %>% unique())
+ 
+# With networkD3, connection must be provided using id, not using real name like in the links dataframe.. So we need to reformat it.
+data_long$IDsource=match(data_long$source, nodes$name)-1 
+data_long$IDtarget=match(data_long$target, nodes$name)-1
+
+
+
+# Make the Network
+sankeyNetwork(Links = data_long, Nodes = nodes,
+                     Source = "IDsource", Target = "IDtarget",
+                     Value = "value", NodeID = "name", 
+                     sinksRight=FALSE, nodeWidth=40, fontSize=13, nodePadding=20)
+
+```
+
+
 
 ```{r}
 levels(factor(df$job_title))  
@@ -189,14 +259,42 @@ y <- rbind(y_2020, y_2021, y_2022)
 
 ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remote_ratio)) + geom_line() + geom_point() + labs(x = "Work Year", y = "Percentage of Remote Ratio", title = "Remote Ratio by Work Year") + theme(plot.title = element_text(hjust = 0.5))
 ```
+# Questions
 
+## 1. 
+## 2. 
+## 3. 
+## 4.
+## 5. 
+## 6. 
+## 7. Can we predict which employees are at risk of leaving their company? 
 
-## Including Plots
+This could be useful for companies who want to retain their top talent and for employees that are underpaid. We could use different factors such to determine which employees are underpaid compared to their peers.
 
-You can also embed plots, for example:
+Our process will consist of the following steps:
+1.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+- Experience level
+- Industry
+- Employee Region
+- Company Size
+- Industry
+- Role
+- Boss
+- Research
+
+- Remote Ratio
+
+```{r}
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## 8.
+## 9. 
+## 10. 
+## 11. 
+## 12.
+## 13. 
+## 14. 
+

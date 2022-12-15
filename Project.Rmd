@@ -1,7 +1,7 @@
 ---
-stitle: "Final Project"
-author: "Jonathan Salisbury"
-date: "2022-11-30"
+title: "Final Project - Data Mining"
+authors: "Dawid Michal Roch Móll, Jonathan Zinzan Salisbury Vega, Joan Sansó Pericàs, Joan Vilella Candia, Julián Wallis Medina"
+date: Sys.Date()
 output: html_document
 ---
 
@@ -12,29 +12,159 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(ggplot2)
 library(dplyr)
+library(ggdist)
 ```
 
 ### Comentarios
 - Casi todos son Full Time
 - Nuevas columnas: 
 
+## Exploratory Data Analysis
 
-
+```{r}
+df <- read.csv("salaries.csv", stringsAsFactors = TRUE)
+summary(df)
+str(df)
+```
 
 
 ## R Markdown
 
 
 ```{r}
-df <- read.csv("salaries.csv", stringsAsFactors = TRUE)
+anyNA(df)
 ```
 
 ```{r}
+df$salary <- NULL
+
+df$remote_ratio <- as.factor(df$remote_ratio)
+levels(df$remote_ratio) <- list("Office" = 0, "Hybrid" = 50,  "Remote" = 100)
+
+df$salaryGroup <- cut(df$salary_in_usd, c(0, 25000, 50000, 75000, 100000, 125000, 150000, 200000, 250000, 1000000))
+df$salaryGroup <- as.factor(df$salaryGroup)
+
 summary(df)
+str(df)
 ```
 
 ```{r}
 levels(factor(df$job_title))  
+```
+
+```{r}
+df$industry <- ifelse( grepl("data", df$job_title, ignore.case = T), "DATA", "OTHER")
+df$industry <- ifelse( grepl("machine", df$job_title, ignore.case = T), "ML/AI", df$industry)
+df$industry <- ifelse( grepl("ML", df$job_title, ignore.case = T), "ML/AI", df$industry)
+df$industry <- ifelse( grepl("AI", df$job_title, ignore.case = T), "ML/AI", df$industry)
+df$industry <- as.factor(df$industry)
+
+df$boss <- ifelse(grepl("head", df$job_title, ignore.case = T), "YES", "NO")
+df$boss <- ifelse(grepl("lead", df$job_title, ignore.case = T), "YES", df$boss)
+df$boss <- ifelse(grepl("principal", df$job_title, ignore.case = T), "YES", df$boss)
+df$boss <- ifelse(grepl("director", df$job_title, ignore.case = T), "YES", df$boss)
+df$boss <- as.factor(df$boss)
+
+df$role <- ifelse(grepl("scientist", df$job_title, ignore.case = T), "SCIENTIST", "OTHER")
+df$role <- ifelse(grepl("engineer", df$job_title, ignore.case = T), "ENGINEER", df$role)
+df$role <- ifelse(grepl("analyst", df$job_title, ignore.case = T), "ANALYST", df$role)
+df$role <- ifelse(grepl("manager", df$job_title, ignore.case = T), "MANAGER", df$role)
+df$role <- ifelse(grepl("architect", df$job_title, ignore.case = T), "ARCHITECT", df$role)
+df$role <- ifelse(grepl("developer", df$job_title, ignore.case = T), "DEVELOPER", df$role)
+df$role <- as.factor(df$role)
+
+df$research <- ifelse(grepl("research", df$job_title, ignore.case = T), "YES", "NO")
+df$research <- as.factor(df$research)
+
+summary(df)
+
+```
+```{r}
+mean(df$salary_in_usd)
+mean(df[df$boss == 'NO', 'salary_in_usd'])
+mean(df[df$boss == 'YES', 'salary_in_usd'])
+
+```
+
+```{r}
+numerics_names <- colnames(df[, sapply(df, is.numeric)])
+factors_names <- colnames(df[, sapply(df, is.factor)])
+
+for (i in 1:length(numerics_names)){
+  print(ggplot(df, aes_string(x= numerics_names[i])) +
+    ggdist::stat_halfeye(
+      adjust=0.5,
+      justification = -.2,
+      .width=0
+    ) +
+    geom_boxplot(
+      width = .1,
+      alpha = 0.5
+    ) +
+     labs(title=paste("Distribution and boxplot of",numerics_names[i]), y="count"))
+}
+
+for (i in 1:length(factors_names)){
+  print(ggplot(df, aes_string(x= factors_names[i])) +
+    geom_bar()+
+     labs(title=paste("Histogram of",factors_names[i]),y="count"))
+}
+```
+
+
+```{r}
+ggplot(df, aes(x = as.factor(work_year) , y = salary_in_usd)) +
+         geom_boxplot() +
+         labs(title = "salary_in_usd vs bedrooms")
+
+ggplot(df, aes(x = experience_level , y = salary_in_usd)) +
+         geom_boxplot() +
+         labs(title = "salary_in_usd vs experience_level")
+
+ggplot(df, aes(x = employment_type , y = salary_in_usd)) +
+         geom_boxplot() +
+         labs(title = "salary_in_usd vs employment_type")
+
+ggplot(df, aes(x = job_title , y = salary_in_usd)) +
+         geom_boxplot() +
+         labs(title = "salary_in_usd vs job_title")
+
+ggplot(df, aes(x = employee_residence , y = salary_in_usd)) +
+         geom_boxplot() +
+         labs(title = "salary_in_usd vs employee_residence")
+
+ggplot(df, aes(x = company_size , y = salary_in_usd)) +
+         geom_boxplot() +
+         labs(title = "salary_in_usd vs company_size")
+
+ggplot(df, aes(x = company_size , y = salary_in_usd)) +
+         geom_boxplot() +
+         labs(title = "salary_in_usd vs company_size")
+
+ggplot(df, aes(x = role , y = salary_in_usd)) +
+         geom_boxplot() +
+         labs(title = "salary_in_usd vs role")
+
+ggplot(df, aes(x = industry , y = salary_in_usd)) +
+         geom_boxplot() +
+         labs(title = "salary_in_usd vs industry")
+
+ggplot(df, aes(x = boss , y = salary_in_usd)) +
+         geom_boxplot() +
+         labs(title = "salary_in_usd vs boss")
+
+ggplot(df, aes(x = research , y = salary_in_usd)) +
+         geom_boxplot() +
+         labs(title = "salary_in_usd vs research")
+
+```
+
+```{r}
+plot(df$employee_residence, df$salary_in_usd, xlab="Employee Residence", ylab="Salary in USD")
+plot(df$company_size, df$salary_in_usd, xlab="Company Size", ylab="Salary in USD")
+plot(df$company_location, df$salary_in_usd, xlab="Company Location", ylab="Salary in USD")
+plot(df$experience_level, df$salary_in_usd, xlab="Experience Level", ylab="Salary in USD")
+plot(df$remote_ratio, df$salary_in_usd, xlab="Remote Ratio", ylab="Salary in USD")
 ```
 
 ```{r}
@@ -58,24 +188,6 @@ y_2022$work_year <- 2022
 y <- rbind(y_2020, y_2021, y_2022)
 
 ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remote_ratio)) + geom_line() + geom_point() + labs(x = "Work Year", y = "Percentage of Remote Ratio", title = "Remote Ratio by Work Year") + theme(plot.title = element_text(hjust = 0.5))
-```
-
-```{r}
-
-
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
 ```
 
 

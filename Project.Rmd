@@ -13,10 +13,11 @@ knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(dplyr)
 library(ggdist)
-
+library(tidyverse)
+library(plotly)
 library(networkD3)
 
-
+set.seed(999)
 ```
 
 ### Comentarios
@@ -31,20 +32,19 @@ summary(df)
 str(df)
 ```
 
-
-
 ```{r}
 anyNA(df)
 ```
 
 ```{r}
+df$ID <- seq.int(nrow(df))
 df$salary <- NULL
 
 df$remote_ratio <- as.factor(df$remote_ratio)
 levels(df$remote_ratio) <- list("Office" = 0, "Hybrid" = 50,  "Remote" = 100)
 
-df$salaryGroup <- cut(df$salary_in_usd, c(0, 25000, 50000, 75000, 100000, 125000, 150000, 200000, 250000, 1000000))
-df$salaryGroup <- as.factor(df$salaryGroup)
+df$salary_group <- cut(df$salary_in_usd, c(0, 25000, 50000, 75000, 100000, 125000, 150000, 200000, 250000, 1000000))
+df$salary_group <- as.factor(df$salary_group)
 ```
 
 ```{r}
@@ -259,6 +259,8 @@ y <- rbind(y_2020, y_2021, y_2022)
 
 ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remote_ratio)) + geom_line() + geom_point() + labs(x = "Work Year", y = "Percentage of Remote Ratio", title = "Remote Ratio by Work Year") + theme(plot.title = element_text(hjust = 0.5))
 ```
+
+
 # Questions
 
 ## 1. 
@@ -271,23 +273,194 @@ ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remot
 
 This could be useful for companies who want to retain their top talent and for employees that are underpaid. We could use different factors such to determine which employees are underpaid compared to their peers.
 
-Our process will consist of the following steps:
-1.
+To answer this questions we will use two different techniques: Clustering and regression.
 
-- Experience level
-- Industry
-- Employee Region
-- Company Size
-- Industry
-- Role
-- Boss
-- Research
+The following features will be used:
+ - Experience level
+ - Employment type
+ - Industry
+ - Employee region
+ - Role
+ - Remote_ratio
+ - Boss
+ - Research
+ - Company size
 
-- Remote Ratio
+### Clustering
 
+
+First we create a separate dataframe for the variables we will use.
 ```{r}
+# Select the variables to use in the clustering analysis
+df_vars <- select(df, experience_level, employment_type, company_size, industry, employee_region, boss, research, role, remote_ratio)
+                    
+df_vars$experience_level <- as.numeric(df_vars$experience_level)
+df_vars$industry <- as.numeric(df_vars$industry)
+df_vars$employment_type <- as.numeric(df_vars$employment_type)
+df_vars$company_size <- as.numeric(df_vars$company_size)
+df_vars$employee_region <- as.numeric(df_vars$employee_region)
+df_vars$role <- as.numeric(df_vars$role)
+df_vars$boss <- as.numeric(df_vars$boss)
+df_vars$research <- as.numeric(df_vars$research)
+df_vars$remote_ratio <- as.numeric(df_vars$remote_ratio)
+
+# Standardize the variables
+df_vars <- scale(df_vars)
 
 ```
+
+
+Let's find find the elbow in our plot, to find the "best" k for the kmeans algorithm
+```{r}
+results <- data.frame(k = integer(), WCSS = double())
+
+# Loop through a range of values for k
+for (k in 2:100) {
+  # Run the k-means clustering algorithm
+  km <- kmeans(df_vars, k, nstart = 10)
+  # Store the results in the data frame
+  results <- rbind(results, data.frame(k = k, WCSS = km$tot.withinss))
+}
+
+# Plot the WCSS values for each value of k
+ggplot(results, aes(x = k, y = WCSS)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Number of clusters (k)", y = "WCSS")
+```
+
+
+```{r}
+# Perform k-means clustering with 3 clusters
+kmeans_results <- kmeans(df_vars, 20)
+
+df_Q7 <- df
+# Add the cluster labels to the original data
+df_Q7$cluster <- kmeans_results$cluster
+
+# Inspect the clusters
+group_by(df_Q7, cluster) %>%
+  summarize(mean_salary = mean(salary_in_usd))
+```
+
+
+```{r}
+fig1 <- plot_ly(df_Q7, x = ~as.numeric(employee_region), y = ~as.numeric(industry), z = ~as.numeric(experience_level), color = ~cluster)
+fig1 <- fig1 %>% add_markers()
+
+axx <- list(ticketmode = 'array', title="Employee region", ticktext = levels(df$employee_region),  tickvals = c(1,2,3,4,5,6,7),  range = c(1,7), tickangle = 25)
+axy <- list(ticketmode = 'array', title="Industry", ticktext = levels(df$industry),  tickvals = c(1,2,3),  range = c(1,3), tickangle = 45)
+axz <- list(ticketmode = 'array', title="Experience level", ticktext = levels(df$experience_level),  tickvals = c(1,2,3,4),  range = c(1,4), tickangle = 45)
+
+fig1 <- fig1 %>% layout(scene = list(xaxis = axx, yaxis = axy, zaxis = axz))
+fig1
+
+
+fig2 <- plot_ly(df_Q7, x = ~as.numeric(role), y = ~as.numeric(industry), z = ~as.numeric(remote_ratio), color = ~cluster)
+fig2 <- fig2 %>% add_markers()
+
+axx <- list(ticketmode = 'array', title="Role", ticktext = levels(df$role),  tickvals = c(1,2,3,4,5,6,7),  range = c(1,7), tickangle = 25)
+axy <- list(ticketmode = 'array', title="Industry", ticktext = levels(df$industry),  tickvals = c(1,2,3),  range = c(1,3), tickangle = 45)
+axz <- list(ticketmode = 'array', title="Remote ratio", ticktext = levels(df$remote_ratio),  tickvals = c(1,2,3),  range = c(1,3), tickangle = 45)
+
+fig2 <- fig2 %>% layout(scene = list(xaxis = axx, yaxis = axy, zaxis = axz))
+fig2
+
+
+fig3 <- plot_ly(df_Q7, x = ~as.numeric(role), y = ~as.numeric(industry), z = ~as.numeric(remote_ratio), color = ~cluster)
+fig3 <- fig3 %>% add_markers()
+
+axx <- list(ticketmode = 'array', title="Role", ticktext = levels(df$role),  tickvals = c(1,2,3,4,5,6,7),  range = c(1,7), tickangle = 25)
+axy <- list(ticketmode = 'array', title="Industry", ticktext = levels(df$industry),  tickvals = c(1,2,3),  range = c(1,3), tickangle = 45)
+axz <- list(ticketmode = 'array', title="Remote ratio", ticktext = levels(df$remote_ratio),  tickvals = c(1,2,3),  range = c(1,3), tickangle = 45)
+
+fig3 <- fig3 %>% layout(scene = list(xaxis = axx, yaxis = axy, zaxis = axz))
+fig3
+
+```
+
+```{r}
+mean_salary <- tapply(df_Q7$salary_in_usd, df_Q7$cluster, mean)
+# View the mean salary for each level of the experience_level variable
+df_Q7$salary_difference_kmeans <- 0
+df_Q7$predicted_salary_kmeans <-0
+
+for (i in 1:nrow(df_Q7)) {
+  cluster_index = match(df_Q7$cluster[i], names(mean_salary))
+  df_Q7$salary_difference_kmeans[i] <- df_Q7$salary_in_usd[i] - mean_salary[cluster_index]
+  df_Q7$predicted_salary_kmeans[i] <- mean_salary[cluster_index]
+}
+
+
+underpaid_employees_kmeans <- df_Q7[df_Q7$salary_difference_kmeans < 0, ]
+overpaid_employees_kmeans <- df_Q7[df_Q7$salary_difference_kmeans > 0, ]
+
+underpaid_employees_kmeans <- underpaid_employees_kmeans[order(underpaid_employees_kmeans$salary_difference_kmeans), ]
+overpaid_employees_kmeans <- overpaid_employees_kmeans[order(overpaid_employees_kmeans$salary_difference_kmeans, decreasing = TRUE), ]
+
+# View the underpaid and overpaid employees
+head(underpaid_employees_kmeans, n = 10)
+head(overpaid_employees_kmeans, n=10)
+```
+
+
+```{r}
+model <- lm(salary_in_usd ~ experience_level + employment_type + employee_region + company_size + industry + role + boss + research + remote_ratio, data = df_Q7)
+summary(model)
+```
+
+```{r}
+df_Q7$predicted_salary_lm  <- predict(model, newdata = df_Q7)
+df_Q7$salary_difference_lm <- df_Q7$salary_in_usd - df_Q7$predicted_salary_lm
+
+# Use the salary difference column to identify underpaid and overpaid employees
+underpaid_employees_lm <- df_Q7[df_Q7$salary_difference_lm < 0, ]
+overpaid_employees_lm <- df_Q7[df_Q7$salary_difference_lm > 0, ]
+
+underpaid_employees_lm <- underpaid_employees_lm[order(underpaid_employees_lm$salary_difference_lm), ]
+overpaid_employees_lm <- overpaid_employees_lm[order(overpaid_employees_lm$salary_difference_lm, decreasing = TRUE), ]
+
+# View the underpaid and overpaid employees
+head(underpaid_employees_lm, n = 10)
+head(overpaid_employees_lm, n=10)
+```
+
+```{r}
+df_Q7 <- df_Q7[order(df_Q7$salary_in_usd),]
+# Add a column to the dataframe with a sequence of integers
+x <- 1:nrow(df_Q7)
+
+df_Q7$color_lm <- ifelse(df_Q7$lm_ratio_error < -17.07, "red", 
+                      ifelse(df_Q7$lm_ratio_error > 32.4, "yellow", "green"))
+
+df_Q7$color_kmeans <- ifelse(df_Q7$kmeans_ratio_error < -18.88, "red", 
+                      ifelse(df_Q7$kmeans_ratio_error > 40.26, "yellow", "green"))
+
+p <- ggplot(df_Q7, aes(x = x, y = salary_in_usd))
+p <- p + geom_point(aes(y = salary_in_usd))
+p <- p + geom_point(aes(y = predicted_salary_lm), color = color_lm)
+p
+
+p <- ggplot(df_Q7, aes(x = x, y = salary_in_usd))
+p <- p + geom_point(aes(y = salary_in_usd))
+p <- p + geom_point(aes(y = predicted_salary_kmeans), color = color_kmeans)
+p
+
+df_Q7$mean_prediction <- (df_Q7$predicted_salary_kmeans + df_Q7$predicted_salary_lm)/2
+
+p <- ggplot(df_Q7, aes(x = x, y = salary_in_usd))
+p <- p + geom_point(aes(y = salary_in_usd))
+p <- p + geom_point(aes(y = mean_prediction), color = "blue")
+p
+
+```
+
+```{r}
+df_Q7$kmeans_ratio_error <- ((df_Q7$predicted_salary_kmeans / df_Q7$salary_in_usd)-1)*100
+df_Q7$lm_ratio_error <- ((df_Q7$predicted_salary_lm / df_Q7$salary_in_usd)-1)*100
+
+```
+
 
 
 ## 8.

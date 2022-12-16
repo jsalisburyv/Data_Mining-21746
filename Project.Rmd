@@ -22,7 +22,7 @@ set.seed(999)
 
 ### Comentarios
 - Casi todos son Full Time
-- Nuevas columnas: 
+- Nuevas columnas:
 
 ## Exploratory Data Analysis
 
@@ -181,54 +181,6 @@ for (i in 1:length(factors_names)){
 }
 ```
 
-
-```{r}
-ggplot(df, aes(x = as.factor(work_year) , y = salary_in_usd)) +
-         geom_boxplot() +
-         labs(title = "salary_in_usd vs bedrooms")
-
-ggplot(df, aes(x = experience_level , y = salary_in_usd)) +
-         geom_boxplot() +
-         labs(title = "salary_in_usd vs experience_level")
-
-ggplot(df, aes(x = employment_type , y = salary_in_usd)) +
-         geom_boxplot() +
-         labs(title = "salary_in_usd vs employment_type")
-
-ggplot(df, aes(x = job_title , y = salary_in_usd)) +
-         geom_boxplot() +
-         labs(title = "salary_in_usd vs job_title")
-
-ggplot(df, aes(x = employee_residence , y = salary_in_usd)) +
-         geom_boxplot() +
-         labs(title = "salary_in_usd vs employee_residence")
-
-ggplot(df, aes(x = company_size , y = salary_in_usd)) +
-         geom_boxplot() +
-         labs(title = "salary_in_usd vs company_size")
-
-ggplot(df, aes(x = company_size , y = salary_in_usd)) +
-         geom_boxplot() +
-         labs(title = "salary_in_usd vs company_size")
-
-ggplot(df, aes(x = role , y = salary_in_usd)) +
-         geom_boxplot() +
-         labs(title = "salary_in_usd vs role")
-
-ggplot(df, aes(x = industry , y = salary_in_usd)) +
-         geom_boxplot() +
-         labs(title = "salary_in_usd vs industry")
-
-ggplot(df, aes(x = boss , y = salary_in_usd)) +
-         geom_boxplot() +
-         labs(title = "salary_in_usd vs boss")
-
-ggplot(df, aes(x = research , y = salary_in_usd)) +
-         geom_boxplot() +
-         labs(title = "salary_in_usd vs research")
-
-```
-
 ```{r}
 plot(df$employee_residence, df$salary_in_usd, xlab="Employee Residence", ylab="Salary in USD")
 plot(df$company_size, df$salary_in_usd, xlab="Company Size", ylab="Salary in USD")
@@ -259,7 +211,6 @@ y <- rbind(y_2020, y_2021, y_2022)
 
 ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remote_ratio)) + geom_line() + geom_point() + labs(x = "Work Year", y = "Percentage of Remote Ratio", title = "Remote Ratio by Work Year") + theme(plot.title = element_text(hjust = 0.5))
 ```
-
 
 # Questions
 
@@ -469,5 +420,63 @@ df_Q7$lm_ratio_error <- ((df_Q7$predicted_salary_lm / df_Q7$salary_in_usd)-1)*10
 ## 11. 
 ## 12.
 ## 13. 
-## 14. 
 
+```{r}
+ggplot(df, aes(x = as.factor(work_year), y = salary_in_usd)) +
+         geom_boxplot(varwidth=T, fill="lightblue") +
+         labs(title = "Salary depending on the work year", x = "Year", y = "Salary in USD") +
+         theme_minimal() + 
+         scale_y_continuous(labels = scales::dollar_format())
+
+ggplot(df, aes(x = experience_level, y = salary_in_usd)) +
+         geom_boxplot(varwidth=T, fill="lightblue") +
+         labs(title = "Salary depending on the experience level", x = "Experience level", y = "Salary in USD") +
+         theme_minimal() + 
+         scale_y_continuous(labels = scales::dollar_format())
+
+ggplot(df, aes(x = employment_type, y = salary_in_usd)) +
+         geom_boxplot(varwidth=T, fill="lightblue") +
+         labs(title = "Salary depending on the employment type", x = "Employment type", y = "Salary in USD") +
+         theme_minimal() + 
+         scale_y_continuous(labels = scales::dollar_format())
+
+ggplot(df, aes(x = employee_region, y = salary_in_usd)) +
+         geom_boxplot(varwidth=T, fill="lightblue") +
+         labs(title = "Salary depending on the employee region of residence", x = "Region of residence", y = "Salary in USD") +
+         theme_minimal() + 
+         scale_y_continuous(labels = scales::dollar_format())
+
+ggplot(df, aes(x = company_size, y = salary_in_usd)) +
+         geom_boxplot(varwidth=T, fill="lightblue") +
+         labs(title = "Salary depending on the company size", x = "Company size", y = "Salary in USD") +
+         theme_minimal() + 
+         scale_y_continuous(labels = scales::dollar_format())
+
+ggplot(df, aes(x = role, y = salary_in_usd)) +
+         geom_boxplot(varwidth=T, fill="lightblue") +
+         labs(title = "Salary depending on the role", x = "Role", y = "Salary in USD") +
+         theme_minimal() + 
+         scale_y_continuous(labels = scales::dollar_format())
+
+ggplot(df, aes(x = industry, y = salary_in_usd)) +
+         geom_boxplot(varwidth=T, fill="lightblue") +
+         labs(title = "Salary depending on the industry", x = "Industry", y = "Salary in USD") +
+         theme_minimal() + 
+         scale_y_continuous(labels = scales::dollar_format())
+
+ggplot(df, aes(x = boss, y = salary_in_usd)) +
+         geom_boxplot(varwidth=T, fill="lightblue") +
+         labs(title = "Salary depending on whether the employee has a leadership position", x = "Has a leadership position", y = "Salary in USD") +
+         theme_minimal() + 
+         scale_y_continuous(labels = scales::dollar_format())
+
+ggplot(df, aes(x = research, y = salary_in_usd)) +
+         geom_boxplot(varwidth=T, fill="lightblue") +
+         labs(title = "Salary depending on whether the employee participates in research projects", x = "Works in research projects", y = "Salary in USD") +
+         theme_minimal() + 
+         scale_y_continuous(labels = scales::dollar_format())
+
+```
+
+## 14. 
+## 15. 

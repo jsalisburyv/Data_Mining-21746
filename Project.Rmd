@@ -16,13 +16,18 @@ library(ggdist)
 library(tidyverse)
 library(plotly)
 library(networkD3)
+library(scales)
+library(reshape)
+
 
 set.seed(999)
 ```
 
 ### Comentarios
 - Casi todos son Full Time
-- Nuevas columnas:
+- MIRAR OUTLIERS
+- Nuevas columnas: 
+
 
 ## Exploratory Data Analysis
 
@@ -73,25 +78,16 @@ summary(df)
 ```
 
 ```{r}
-
-# I've got two columns, one with the company region and another with the employee region. I want to create a sankey diagram / migration flow chart
-# that shows the number of employees that are from a certain region and work in a certain region.
-# For it I have to create an auxiliar data frame with the number of employees that are from a certain region and work in a certain region.
-
-# Create the auxiliar data frame where the rows and columns are the regions and the values are the number of employees that are from a certain region and work in a certain region.
-# The auxiliar data frame will have the same number of rows and columns as the number of regions.
 aux <- data.frame(matrix(0, nrow = length(levels(df$company_region)), ncol = length(levels(df$company_region))))
 colnames(aux) <- levels(df$company_region)
 rownames(aux) <- levels(df$company_region)
 
-# Now calculate the number of employees that are from a certain region and work in a certain region.
 for (i in 1:nrow(aux)) {
   for (j in 1:ncol(aux)) {
     aux[i, j] <- length(which(df$company_region == colnames(aux)[j] & df$employee_region == rownames(aux)[i]))
   }
 }
 
-# I need a long format
 data_long <- aux %>%
   rownames_to_column %>%
   gather(key = 'key', value = 'value', -rowname) %>%
@@ -99,21 +95,15 @@ data_long <- aux %>%
 colnames(data_long) <- c("source", "target", "value")
 data_long$target <- paste(data_long$target, " ", sep="")
 
-# From these flows we need to create a node data frame: it lists every entities involved in the flow
 nodes <- data.frame(name=c(as.character(data_long$source), as.character(data_long$target)) %>% unique())
  
-# With networkD3, connection must be provided using id, not using real name like in the links dataframe.. So we need to reformat it.
 data_long$IDsource=match(data_long$source, nodes$name)-1 
 data_long$IDtarget=match(data_long$target, nodes$name)-1
 
-
-
-# Make the Network
 sankeyNetwork(Links = data_long, Nodes = nodes,
                      Source = "IDsource", Target = "IDtarget",
                      Value = "value", NodeID = "name", 
                      sinksRight=FALSE, nodeWidth=40, fontSize=13, nodePadding=20)
-
 ```
 
 
@@ -153,7 +143,6 @@ summary(df)
 mean(df$salary_in_usd)
 mean(df[df$boss == 'NO', 'salary_in_usd'])
 mean(df[df$boss == 'YES', 'salary_in_usd'])
-
 ```
 
 ```{r}
@@ -220,7 +209,8 @@ ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remot
 ## 4.
 ## 5. 
 ## 6. 
-## 7. Can we predict which employees are at risk of leaving their company? 
+ 
+## 7. Can we predict which employees are at risk of leaving their company?
 
 This could be useful for companies who want to retain their top talent and for employees that are underpaid. We could use different factors such to determine which employees are underpaid compared to their peers.
 
@@ -261,7 +251,7 @@ df_vars <- scale(df_vars)
 ```
 
 
-Let's find find the elbow in our plot, to find the "best" k for the kmeans algorithm
+Let s find find the elbow in our plot, to find the "best" k for the kmeans algorithm
 ```{r}
 results <- data.frame(k = integer(), WCSS = double())
 
@@ -342,7 +332,6 @@ for (i in 1:nrow(df_Q7)) {
   df_Q7$predicted_salary_kmeans[i] <- mean_salary[cluster_index]
 }
 
-
 underpaid_employees_kmeans <- df_Q7[df_Q7$salary_difference_kmeans < 0, ]
 overpaid_employees_kmeans <- df_Q7[df_Q7$salary_difference_kmeans > 0, ]
 
@@ -377,42 +366,130 @@ head(overpaid_employees_lm, n=10)
 ```
 
 ```{r}
+df_Q7$kmeans_ratio_error <- ((df_Q7$predicted_salary_kmeans / df_Q7$salary_in_usd)-1)*100
+df_Q7$lm_ratio_error <- ((df_Q7$predicted_salary_lm / df_Q7$salary_in_usd)-1)*100
+
+summary(df_Q7[, c("kmeans_ratio_error","lm_ratio_error")])
+```
+
+```{r}
 df_Q7 <- df_Q7[order(df_Q7$salary_in_usd),]
 # Add a column to the dataframe with a sequence of integers
 x <- 1:nrow(df_Q7)
 
-df_Q7$color_lm <- ifelse(df_Q7$lm_ratio_error < -17.07, "red", 
-                      ifelse(df_Q7$lm_ratio_error > 32.4, "yellow", "green"))
+df_Q7$status_lm <- ifelse(df_Q7$lm_ratio_error < -17.07, "Overpaid", 
+                      ifelse(df_Q7$lm_ratio_error < 32.4, "Normal", "Underpaid"))
 
-df_Q7$color_kmeans <- ifelse(df_Q7$kmeans_ratio_error < -18.88, "red", 
-                      ifelse(df_Q7$kmeans_ratio_error > 40.26, "yellow", "green"))
+df_Q7$status_kmeans <- ifelse(df_Q7$kmeans_ratio_error < -18.88, "Overpaid", 
+                      ifelse(df_Q7$kmeans_ratio_error < 40.26, "Normal", "Underpaid"))
+```
 
-p <- ggplot(df_Q7, aes(x = x, y = salary_in_usd))
-p <- p + geom_point(aes(y = salary_in_usd))
-p <- p + geom_point(aes(y = predicted_salary_lm), color = color_lm)
-p
 
-p <- ggplot(df_Q7, aes(x = x, y = salary_in_usd))
-p <- p + geom_point(aes(y = salary_in_usd))
-p <- p + geom_point(aes(y = predicted_salary_kmeans), color = color_kmeans)
-p
+```{r}
+ggplot(df_Q7, aes(x = x, y = salary_in_usd)) +
+        geom_point(aes(y = salary_in_usd), size= 2, shape = 20) +
+        geom_point(aes(y = predicted_salary_lm, color = status_lm), size =2,  shape = 20, alpha = 0.9) + 
+        scale_color_manual(
+          values = c("Overpaid" = "red", "Underpaid" = "orange", "Normal" = "green"), 
+          labels = c('Normal', 'Overpaid', 'Underpaid'),
+          aesthetics = c("colour", "fill"), 
+          name = "Consideration") +
+        ggtitle("Plot of salary and predicted salaries using Linear Regression") +
+        ylab("Salary in USD") +
+        scale_y_continuous(labels = label_comma(), breaks = scales::pretty_breaks(n = 10))
+        
 
-df_Q7$mean_prediction <- (df_Q7$predicted_salary_kmeans + df_Q7$predicted_salary_lm)/2
+ggplot(df_Q7, aes(x = x, y = salary_in_usd)) +
+        geom_point(aes(y = salary_in_usd), size= 2, shape = 20) +
+        geom_point(aes(y = predicted_salary_kmeans, color = status_kmeans), size =2,  shape = 20, alpha = 0.9) + 
+        scale_color_manual(
+          values = c("Overpaid" = "red", "Underpaid" = "orange", "Normal" = "green"), 
+          labels = c('Normal', 'Overpaid', 'Underpaid'),
+          aesthetics = c("colour", "fill"),
+          name = "Consideration") +
+        ggtitle("Plot of salary and predicted salaries using Clustering") +
+        ylab("Salary in USD") +
+        labs(fill="Consideration") +
+        scale_y_continuous(labels = label_comma(), breaks = scales::pretty_breaks(n = 10))
 
-p <- ggplot(df_Q7, aes(x = x, y = salary_in_usd))
-p <- p + geom_point(aes(y = salary_in_usd))
-p <- p + geom_point(aes(y = mean_prediction), color = "blue")
-p
+
+```
+
+
+```{r}
+df_Q7$status_lm <- as.factor(df_Q7$status_lm)
+df_Q7$status_kmeans <- as.factor(df_Q7$status_kmeans)
+
+
+ct <- table(df_Q7$status_lm,df_Q7$status_kmeans)
+ct <- ct[c(3,1,2),c(3,1,2)]
+ct <- melt(ct)
+colnames(ct) <- c("LinearRegression", "Clustering", "Count")
+
+ggplot(ct, aes(x = LinearRegression, y = Clustering, fill = Count)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "#075AFF", mid = "#FFFFCC", high = "#FF0000") +
+  geom_text(aes(label = Count), color = "black", size = 4) +
+  coord_fixed() +
+  ggtitle("Comparison between Clustering and Linear Regression") 
 
 ```
 
 ```{r}
-df_Q7$kmeans_ratio_error <- ((df_Q7$predicted_salary_kmeans / df_Q7$salary_in_usd)-1)*100
-df_Q7$lm_ratio_error <- ((df_Q7$predicted_salary_lm / df_Q7$salary_in_usd)-1)*100
+underpaid_lm <- df_Q7[df_Q7$status_lm=="Underpaid",]
+overpaid_lm <- df_Q7[df_Q7$status_lm=="Overpaid",]
 
+underpaid_kmeans <- df_Q7[df_Q7$status_kmeans =="Underpaid",]
+overpaid_kmeans  <- df_Q7[df_Q7$status_kmeans =="Overpaid",]
 ```
 
 
+```{r}
+
+variables <- c("experience_level", "remote_ratio", "salary_group", "employee_region", "company_region", "role", "boss", "research", "company_size", "industry")
+
+for (i in 1:length(variables)){
+  ratio_df <- table(df_Q7[, c(variables[i])])/nrow(df_Q7)
+  ratio_up_lm <- table(underpaid_lm[, c(variables[i])])/nrow(underpaid_lm)
+  ratio_op_lm <- table(overpaid_lm[, c(variables[i])])/nrow(overpaid_lm)
+
+  # plot them in such a way that they can be compared
+  df_long_lm <- melt(data.frame(ratio_up_lm, ratio_df, ratio_op_lm))
+  
+  ratio_up_kmeans <- table(underpaid_kmeans[, c(variables[i])])/nrow(underpaid_kmeans)
+  ratio_op_kmeans <- table(overpaid_kmeans[, c(variables[i])])/nrow(overpaid_kmeans)
+
+  # plot them in such a way that they can be compared
+  df_long_kmeans <- melt(data.frame(ratio_up_kmeans, ratio_df, ratio_op_kmeans))
+
+  print(ggplot(data = df_long_lm, aes(x = variable, y = value , fill = Var1, label = round(value, 2))) +
+    geom_bar(stat = "identity", position = "fill") +
+    geom_text(size = 3, position = position_stack(vjust = 0.5)) +
+    scale_x_discrete(labels = c("Freq"= "Underpaid", "Freq.1"= "Normal", "Freq.2" = "Overpaid")) +
+    labs(fill=variables[i], title=paste("Stacked percent bar chart of ",variables[i], " (LM)"), x="Consideration", y = "%"))
+  
+   print(ggplot(data = df_long_kmeans, aes(x = variable, y = value , fill = Var1, label = round(value, 2))) +
+    geom_bar(stat = "identity", position = "fill") +
+    geom_text(size = 3, position = position_stack(vjust = 0.5)) +
+    scale_x_discrete(labels = c("Freq"= "Underpaid", "Freq.1"= "Normal", "Freq.2" = "Overpaid")) +
+    labs(fill=variables[i], title=paste("Stacked percent bar chart of ",variables[i], " (Clustering)"), x="Consideration", y = "%"))
+}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+ ggplot(all_data, aes(x=experience_level, fill=dataset)) + 
+       geom_bar(position="dodge") +
+       labs(title=paste("Comparison of", feature, "across datasets", sep=" "))
+```
 
 ## 8.
 ## 9. 

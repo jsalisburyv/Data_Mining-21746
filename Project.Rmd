@@ -28,7 +28,6 @@ set.seed(999)
 - MIRAR OUTLIERS
 - Nuevas columnas: 
 
-
 ## Exploratory Data Analysis
 
 ```{r}
@@ -105,8 +104,6 @@ sankeyNetwork(Links = data_long, Nodes = nodes,
                      Value = "value", NodeID = "name", 
                      sinksRight=FALSE, nodeWidth=40, fontSize=13, nodePadding=20)
 ```
-
-
 
 ```{r}
 levels(factor(df$job_title))  
@@ -229,7 +226,6 @@ The following features will be used:
 
 ### Clustering
 
-
 First we create a separate dataframe for the variables we will use.
 ```{r}
 # Select the variables to use in the clustering analysis
@@ -250,7 +246,6 @@ df_vars <- scale(df_vars)
 
 ```
 
-
 Let s find find the elbow in our plot, to find the "best" k for the kmeans algorithm
 ```{r}
 results <- data.frame(k = integer(), WCSS = double())
@@ -270,7 +265,6 @@ ggplot(results, aes(x = k, y = WCSS)) +
   labs(x = "Number of clusters (k)", y = "WCSS")
 ```
 
-
 ```{r}
 # Perform k-means clustering with 3 clusters
 kmeans_results <- kmeans(df_vars, 20)
@@ -283,7 +277,6 @@ df_Q7$cluster <- kmeans_results$cluster
 group_by(df_Q7, cluster) %>%
   summarize(mean_salary = mean(salary_in_usd))
 ```
-
 
 ```{r}
 fig1 <- plot_ly(df_Q7, x = ~as.numeric(employee_region), y = ~as.numeric(industry), z = ~as.numeric(experience_level), color = ~cluster)
@@ -343,7 +336,6 @@ head(underpaid_employees_kmeans, n = 10)
 head(overpaid_employees_kmeans, n=10)
 ```
 
-
 ```{r}
 model <- lm(salary_in_usd ~ experience_level + employment_type + employee_region + company_size + industry + role + boss + research + remote_ratio, data = df_Q7)
 summary(model)
@@ -384,7 +376,6 @@ df_Q7$status_kmeans <- ifelse(df_Q7$kmeans_ratio_error < -18.88, "Overpaid",
                       ifelse(df_Q7$kmeans_ratio_error < 40.26, "Normal", "Underpaid"))
 ```
 
-
 ```{r}
 ggplot(df_Q7, aes(x = x, y = salary_in_usd)) +
         geom_point(aes(y = salary_in_usd), size= 2, shape = 20) +
@@ -415,7 +406,6 @@ ggplot(df_Q7, aes(x = x, y = salary_in_usd)) +
 
 ```
 
-
 ```{r}
 df_Q7$status_lm <- as.factor(df_Q7$status_lm)
 df_Q7$status_kmeans <- as.factor(df_Q7$status_kmeans)
@@ -442,7 +432,6 @@ overpaid_lm <- df_Q7[df_Q7$status_lm=="Overpaid",]
 underpaid_kmeans <- df_Q7[df_Q7$status_kmeans =="Underpaid",]
 overpaid_kmeans  <- df_Q7[df_Q7$status_kmeans =="Overpaid",]
 ```
-
 
 ```{r}
 
@@ -478,14 +467,6 @@ for (i in 1:length(variables)){
 ```
 
 ```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
  ggplot(all_data, aes(x=experience_level, fill=dataset)) + 
        geom_bar(position="dodge") +
        labs(title=paste("Comparison of", feature, "across datasets", sep=" "))
@@ -496,8 +477,9 @@ for (i in 1:length(variables)){
 ## 10. 
 ## 11. 
 ## 12.
-## 13. 
+## 13. Can we identify salary disparities based on residence and other demographic factors?
 
+For this we'll use visualization techniques with the ggplot library. The width of the boxes depends on the amount of samples each class/value has so we can extract better conclusions out of them.
 ```{r}
 ggplot(df, aes(x = as.factor(work_year), y = salary_in_usd)) +
          geom_boxplot(varwidth=T, fill="lightblue") +
@@ -552,8 +534,19 @@ ggplot(df, aes(x = research, y = salary_in_usd)) +
          labs(title = "Salary depending on whether the employee participates in research projects", x = "Works in research projects", y = "Salary in USD") +
          theme_minimal() + 
          scale_y_continuous(labels = scales::dollar_format())
-
 ```
+
+Let's go through the different plots and check if we can identify any disparity:
+
+  - Work year: we can observe how the salaries seem to be growing year by year - mostly in 2022. Probably due to the inflation rates. Further we can check which is the amount of growth in salaries discounting the inflation.
+  - Experience level: as expected, more experienced professionals earn a higher salary.
+  - Employment type: we can't say much about contract, freelance or part time jobs since the amount of samples we have is quite reduced; but probably contracts generate higher revenue than a full time job.
+  - Employee region of residence: we can observe how the income in north american countries is higher than in the other regions, can't say much about other regions apart of NA and Europe since the dataset is mostly composed of these regions data.
+  - Company size: we can clearly see that smaller companies usually offer lower salaries while medium and large companies have higher wages. The difference between medium and large ones is mostly the same but the impressive salaries usually come from large enterprises (makes sense think about Google, Meta, Netflix, Amazon...).
+  - Role: better paid roles are architects, engineers, managers and scientists while developers have the lower wages from all the roles.
+  - Industry: in terms of the company industry we can't say much about it since data and ML/AI companies are quite similar when it comes to wages.
+  - Leadership position: we can clearly observe how having a leadership position in the company usually implies a higher salary in return.
+  - Involved in research projects: on the other hand, participating in research projects seems to be not so interesting, at least from the financial perspective, since most other people earn higher salaries than the ones that participate in this kind of projects.
 
 ## 14. 
 ## 15. 

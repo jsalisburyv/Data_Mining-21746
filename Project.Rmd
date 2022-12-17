@@ -116,11 +116,10 @@ df$industry <- ifelse( grepl("ML", df$job_title, ignore.case = T), "ML/AI", df$i
 df$industry <- ifelse( grepl("AI", df$job_title, ignore.case = T), "ML/AI", df$industry)
 df$industry <- as.factor(df$industry)
 
-df$boss <- ifelse(grepl("head", df$job_title, ignore.case = T), "YES", "NO")
-df$boss <- ifelse(grepl("lead", df$job_title, ignore.case = T), "YES", df$boss)
-df$boss <- ifelse(grepl("principal", df$job_title, ignore.case = T), "YES", df$boss)
-df$boss <- ifelse(grepl("director", df$job_title, ignore.case = T), "YES", df$boss)
-df$boss <- as.factor(df$boss)
+df$boss <- ifelse(grepl("head", df$job_title, ignore.case = T), TRUE, FALSE)
+df$boss <- ifelse(grepl("lead", df$job_title, ignore.case = T), TRUE, df$boss)
+df$boss <- ifelse(grepl("principal", df$job_title, ignore.case = T), TRUE, df$boss)
+df$boss <- ifelse(grepl("director", df$job_title, ignore.case = T), TRUE, df$boss)
 
 df$role <- ifelse(grepl("scientist", df$job_title, ignore.case = T), "SCIENTIST", "OTHER")
 df$role <- ifelse(grepl("engineer", df$job_title, ignore.case = T), "ENGINEER", df$role)
@@ -130,8 +129,7 @@ df$role <- ifelse(grepl("architect", df$job_title, ignore.case = T), "ARCHITECT"
 df$role <- ifelse(grepl("developer", df$job_title, ignore.case = T), "DEVELOPER", df$role)
 df$role <- as.factor(df$role)
 
-df$research <- ifelse(grepl("research", df$job_title, ignore.case = T), "YES", "NO")
-df$research <- as.factor(df$research)
+df$research <- ifelse(grepl("research", df$job_title, ignore.case = T), TRUE, FALSE)
 
 summary(df)
 

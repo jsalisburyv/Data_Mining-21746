@@ -201,8 +201,78 @@ ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remot
 ## 1. 
 ## 2. 
 ## 3. 
-## 4.
-## 5. 
+## 4. How much more are seniors/experts paid than junior developers?
+
+This could be useful for employees that are going to recieve a promotion, and want
+to know how much they should get paid for their new position.
+It could also be useful for employers that want to know how much they should offer
+new hires or promoting employees.
+
+```{r}
+f <- ggplot(df, aes(x=reorder(experience_level,salary_in_usd), y=salary_in_usd))+
+     geom_boxplot()
+f
+```
+As we can see, from ENtry level to EXpert level, as the experience increases, the larger the average salary gets. Lets see if we can find, using clustering, 3 zones for each
+
+```{r}
+dfAux = df[c('salary_in_usd','experience_level')]
+levels(dfAux$experience_level) <- c(1,4,2,3)
+cls <- kmeans(x = dfAux, centers = 3)
+dfAux$cluster <- as.character(cls$cluster)
+f <- ggplot()+
+  geom_violin(data=dfAux,scale="area",mapping=aes(x = reorder(experience_level,salary_in_usd), y = salary_in_usd))+
+  geom_point(data=dfAux, mapping= aes(x = reorder(experience_level,salary_in_usd), y = salary_in_usd, colour = cluster))
+f
+```
+
+```{r}
+dfEN = df[df$experience_level=='EN',]
+dfEN = dfEN[c('salary_in_usd')]
+quantiles <- quantile(dfEN$salary_in_usd, c(0.05,0.95))
+#dfEN <- dfEN[dfEN.loc(dfEN$salary_in_usd>quantiles[1] & dfEN$salary_in_usd < quantiles[2],)]
+#TODO: FIX
+clsEN <- kmeans(x=dfEN, centers=3)
+dfEN$cluster <- as.character(clsEN$cluster)
+dfEN
+f <- ggplot(data=dfEN,mapping=aes(x='EN',y=salary_in_usd))+
+  geom_violin(scale="count")+
+  geom_point(aes(colour=cluster))
+f
+
+dfMI = df[df$experience_level=='MI',]
+dfMI = dfMI[c('salary_in_usd')]
+clsMI <- kmeans(x=dfMI, centers=3)
+dfMI$cluster <- as.character(clsMI$cluster)
+f <- ggplot(data=dfMI,mapping=aes(x='MI',y=salary_in_usd))+
+  geom_violin(scale="count")+
+  geom_point(aes(colour=cluster))
+f
+
+dfSE = df[df$experience_level=='SE',]
+dfSE = dfSE[c('salary_in_usd')]
+clsSE <- kmeans(x=dfSE, centers=3)
+dfSE$cluster <- as.character(clsSE$cluster)
+f <- ggplot(data=dfSE,mapping=aes(x='SE',y=salary_in_usd))+
+  geom_violin(scale="count")+
+  geom_point(aes(colour=cluster))
+f
+
+dfEX = df[df$experience_level=='EX',]
+dfEX = dfEX[c('salary_in_usd')]
+clsEX <- kmeans(x=dfEX, centers=3)
+dfEX$cluster <- as.character(clsEX$cluster)
+f <- ggplot(data=dfEX,mapping=aes(x='EX',y=salary_in_usd))+
+  geom_violin(scale="count")+
+  geom_point(aes(colour=cluster))
+f
+```
+
+
+
+
+
+## 5. Do bigger companies pay more to their employees?
 ## 6. 
  
 ## 7. Can we predict which employees are at risk of leaving their company?
@@ -462,12 +532,6 @@ for (i in 1:length(variables)){
     labs(fill=variables[i], title=paste("Stacked percent bar chart of ",variables[i], " (Clustering)"), x="Consideration", y = "%"))
 }
 
-```
-
-```{r}
- ggplot(all_data, aes(x=experience_level, fill=dataset)) + 
-       geom_bar(position="dodge") +
-       labs(title=paste("Comparison of", feature, "across datasets", sep=" "))
 ```
 
 ## 8.

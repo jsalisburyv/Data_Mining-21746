@@ -236,10 +236,11 @@ new hires or promoting employees.
 
 ```{r}
 f <- ggplot(df, aes(x=reorder(experience_level,salary_in_usd), y=salary_in_usd))+
-     geom_boxplot()
+     geom_boxplot()+
+     ggtitle("Salary Distribution for each experience level") + ylab("Salary (USD)") + xlab("")
 f
 ```
-As we can see, from ENtry level to EXpert level, as the experience increases, the larger the average salary gets. Lets see if we can find, using clustering, 3 zones for each
+As we can see, from ENtry level to EXecutive level, as the experience increases, the larger the average salary gets. Lets see if we can find, using clustering, 3 zones for each
 
 
 ```{r}
@@ -253,7 +254,7 @@ dfEN$cluster <- as.character(clsEN$cluster)
 f <- ggplot(data=dfEN,mapping=aes(x='EN',y=salary_in_usd))+
   geom_violin(scale="count")+
   geom_point(aes(colour=cluster))
-f
+f + ggtitle("Clusters of salary for entry level") + xlab("") + ylab("Salary (USD)")
 
 dfMI = df[df$experience_level=='MI',]
 quantiles <- quantile(dfMI$salary_in_usd, c(0.05,0.95))
@@ -264,7 +265,7 @@ dfMI$cluster <- as.character(clsMI$cluster)
 f <- ggplot(data=dfMI,mapping=aes(x='MI',y=salary_in_usd))+
   geom_violin(scale="count")+
   geom_point(aes(colour=cluster))
-f
+f + ggtitle("Clusters of salary for mid level") + xlab("") + ylab("Salary (USD)")
 
 dfSE = df[df$experience_level=='SE',]
 quantiles <- quantile(dfSE$salary_in_usd, c(0.05,0.95))
@@ -275,7 +276,7 @@ dfSE$cluster <- as.character(clsSE$cluster)
 f <- ggplot(data=dfSE,mapping=aes(x='SE',y=salary_in_usd))+
   geom_violin(scale="count")+
   geom_point(aes(colour=cluster))
-f
+f+ ggtitle("Clusters of salary for senior level") + xlab("") + ylab("Salary (USD)")
 
 dfEX = df[df$experience_level=='EX',]
 quantiles <- quantile(dfEX$salary_in_usd, c(0.05,0.95))
@@ -286,7 +287,7 @@ dfEX$cluster <- as.character(clsEX$cluster)
 f <- ggplot(data=dfEX,mapping=aes(x='EX',y=salary_in_usd))+
   geom_violin(scale="count")+
   geom_point(aes(colour=cluster))
-f
+f+ ggtitle("Clusters of salary for executive level") + xlab("") + ylab("Salary (USD)")
 ```
 
 Lets try to find the mean salary for each middle cluster per experience level:
@@ -295,12 +296,12 @@ Lets try to find the mean salary for each middle cluster per experience level:
 entry_fair_mean = mean(dfEN$salary_in_usd[dfEN$cluster==2])
 middle_fair_mean = mean(dfMI$salary_in_usd[dfMI$cluster==2])
 senior_fair_mean = mean(dfSE$salary_in_usd[dfSE$cluster==2])
-expert_fair_mean = mean(dfEX$salary_in_usd[dfEX$cluster==2])
+executive_fair_mean = mean(dfEX$salary_in_usd[dfEX$cluster==2])
 
 entry_fair_mean
 middle_fair_mean
 senior_fair_mean
-expert_fair_mean
+executive_fair_mean
 ```
 
 These values indicate the average salary for each experience level of employees that are fairly paid (not underpaid nor overpaid). Now we will try to find the salary increase from one experience level to another.
@@ -309,22 +310,22 @@ These values indicate the average salary for each experience level of employees 
 ```{r}
 entry_to_middle_increase_absolute = middle_fair_mean - entry_fair_mean
 middle_to_senior_increase_absolute  = senior_fair_mean - middle_fair_mean
-senior_to_expert_increase_absolute  = expert_fair_mean - senior_fair_mean
+senior_to_executive_increase_absolute  = executive_fair_mean - senior_fair_mean
 
 entry_to_middle_increase_absolute
 middle_to_senior_increase_absolute
-senior_to_expert_increase_absolute
+senior_to_executive_increase_absolute
 ```
 
 
 ```{r}
 entry_to_middle_increase_relative = (((entry_fair_mean+entry_to_middle_increase_absolute)/entry_fair_mean)-1)
 middle_to_senior_increase_relative = (((middle_fair_mean+middle_to_senior_increase_absolute)/middle_fair_mean)-1)
-senior_to_expert_increase_relative = (((senior_fair_mean+senior_to_expert_increase_absolute)/senior_fair_mean)-1)
+senior_to_executive_increase_relative = (((senior_fair_mean+senior_to_executive_increase_absolute)/senior_fair_mean)-1)
 
 cat(entry_to_middle_increase_relative*100,"%\n")
 cat(middle_to_senior_increase_relative*100,"%\n")
-cat(senior_to_expert_increase_relative*100, "%\n")
+cat(senior_to_executive_increase_relative*100, "%\n")
 ```
 
 The first four values indicate the mean salary of the fairly paid group for each experience level. Using those values, we find the average salary increase from one role to another. As we can see

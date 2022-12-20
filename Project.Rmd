@@ -669,5 +669,13 @@ Let's go through the different plots and check if we can identify any disparity:
   - Leadership position: we can clearly observe how having a leadership position in the company usually implies a higher salary in return.
   - Involved in research projects: on the other hand, participating in research projects seems to be not so interesting, at least from the financial perspective, since most other people earn higher salaries than the ones that participate in this kind of projects.
 
+```{r}
+increase = (mean(df[df$work_year == 2022, 'salary_in_usd'])/mean(df[df$work_year == 2021, 'salary_in_usd'])) - 1
+net_increase = increase - 0.077 # official inflation rate in 2022 in the US
+net_increase
+```
+
+It seems like the increase in salaries between 2021 and 2022 is not explained only with the inflation, since the increase has been of over a 34% in total and the official 2022 inflation rate that the US government gives is ay 7.7%. The net salary increase taking that into account (most samples of the data are US based), net salaries have increased a 27.17%.
+
 ## 14. 
 ## 15. 

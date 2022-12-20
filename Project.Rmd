@@ -49,6 +49,7 @@ levels(df$remote_ratio) <- list("Office" = 0, "Hybrid" = 50,  "Remote" = 100)
 
 df$salary_group <- cut(df$salary_in_usd, c(0, 25000, 50000, 75000, 100000, 125000, 150000, 200000, 250000, 1000000))
 df$salary_group <- as.factor(df$salary_group)
+levels(df$salary_group) <- c("25k", "50k", "75k", "100k", "125k", "150k", "200k", "250k", "1M")
 ```
 
 ```{r}

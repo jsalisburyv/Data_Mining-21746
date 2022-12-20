@@ -18,6 +18,7 @@ library(plotly)
 library(networkD3)
 library(scales)
 library(reshape)
+library(klaR)
 
 
 set.seed(999)
@@ -41,7 +42,6 @@ anyNA(df)
 ```
 
 ```{r}
-df$ID <- seq.int(nrow(df))
 df$salary <- NULL
 
 df$remote_ratio <- as.factor(df$remote_ratio)
@@ -209,22 +209,22 @@ ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remot
 ## For us, students who are now finishing their degree. What is the best combination (based on salary)?
 
 ```{r}
-df_Q7 <- df
-# Make a graphic where experience_level = EN, y axis = salary_in_usd, x axis = country
-df_Q7 <- df_Q7[df_Q7$experience_level == 'EN',]
-df_Q7 <- df_Q7[df_Q7$remote_ratio == '0%',]
-df_Q7 <- df_Q7[df_Q7$boss == 'NO',]
-df_Q7 <- df_Q7[df_Q7$research == FALSE,]
-df_Q7 <- df_Q7[df_Q7$role == 'DEVELOPER',]
-df_Q7 <- df_Q7[df_Q7$work_year == 2022,]
-df_Q7 <- df_Q7[df_Q7$job_title == 'Software Engineer',]
-df_Q7 <- df_Q7[df_Q7$company_industry == 'Information Technology and Services',]
-df_Q7 <- df_Q7[df_Q7$company_sector == 'Information Technology',]
-
-plot(df$remote_ratio, df$salary_in_usd, xlab="Remote Ratio", ylab="Salary in USD")
-
-# Make a graphic where x axis = region, y axis = salary_in_usd
-plot(df$employee_region, df$salary_in_usd, xlab="employee_region", ylab="Salary in USD")
+# df_Q7 <- df
+# # Make a graphic where experience_level = EN, y axis = salary_in_usd, x axis = country
+# df_Q7 <- df_Q7[df_Q7$experience_level == 'EN',]
+# df_Q7 <- df_Q7[df_Q7$remote_ratio == '0%',]
+# df_Q7 <- df_Q7[df_Q7$boss == 'NO',]
+# df_Q7 <- df_Q7[df_Q7$research == FALSE,]
+# df_Q7 <- df_Q7[df_Q7$role == 'DEVELOPER',]
+# df_Q7 <- df_Q7[df_Q7$work_year == 2022,]
+# df_Q7 <- df_Q7[df_Q7$job_title == 'Software Engineer',]
+# df_Q7 <- df_Q7[df_Q7$company_industry == 'Information Technology and Services',]
+# df_Q7 <- df_Q7[df_Q7$company_sector == 'Information Technology',]
+# 
+# plot(df$remote_ratio, df$salary_in_usd, xlab="Remote Ratio", ylab="Salary in USD")
+# 
+# # Make a graphic where x axis = region, y axis = salary_in_usd
+# plot(df$employee_region, df$salary_in_usd, xlab="employee_region", ylab="Salary in USD")
 ```
 
 ## 4. How much should the salary increase be when you get promoted to a higher experience_level?
@@ -356,49 +356,50 @@ The following features will be used:
 First we create a separate dataframe for the variables we will use.
 ```{r}
 # Select the variables to use in the clustering analysis
-df_vars <- select(df, experience_level, employment_type, company_size, industry, employee_region, boss, research, role, remote_ratio)
-                    
-df_vars$experience_level <- as.numeric(df_vars$experience_level)
-df_vars$industry <- as.numeric(df_vars$industry)
-df_vars$employment_type <- as.numeric(df_vars$employment_type)
-df_vars$company_size <- as.numeric(df_vars$company_size)
-df_vars$employee_region <- as.numeric(df_vars$employee_region)
-df_vars$role <- as.numeric(df_vars$role)
-df_vars$boss <- as.numeric(df_vars$boss)
-df_vars$research <- as.numeric(df_vars$research)
-df_vars$remote_ratio <- as.numeric(df_vars$remote_ratio)
-
-# Standardize the variables
-df_vars <- scale(df_vars)
+df_vars <- dplyr::select(df, experience_level, employment_type, company_size, industry, employee_region, boss, research, role, remote_ratio)
+#                     
+# df_vars$experience_level <- as.numeric(df_vars$experience_level)
+# df_vars$industry <- as.numeric(df_vars$industry)
+# df_vars$employment_type <- as.numeric(df_vars$employment_type)
+# df_vars$company_size <- as.numeric(df_vars$company_size)
+# df_vars$employee_region <- as.numeric(df_vars$employee_region)
+# df_vars$role <- as.numeric(df_vars$role)
+# df_vars$boss <- as.numeric(df_vars$boss)
+# df_vars$research <- as.numeric(df_vars$research)
+# df_vars$remote_ratio <- as.numeric(df_vars$remote_ratio)
+# 
+# # Standardize the variables
+# df_vars <- scale(df_vars)
 
 ```
 
-Let s find find the elbow in our plot, to find the "best" k for the kmeans algorithm
+Let s find find the elbow in our plot, to find the "best" k for the kmodes algorithm
 ```{r}
-results <- data.frame(k = integer(), WCSS = double())
-
-# Loop through a range of values for k
-for (k in 2:100) {
-  # Run the k-means clustering algorithm
-  km <- kmeans(df_vars, k, nstart = 10)
-  # Store the results in the data frame
-  results <- rbind(results, data.frame(k = k, WCSS = km$tot.withinss))
-}
-
-# Plot the WCSS values for each value of k
-ggplot(results, aes(x = k, y = WCSS)) +
-  geom_line() +
-  geom_point() +
-  labs(x = "Number of clusters (k)", y = "WCSS")
+# results <- data.frame(k = integer(), WCSS = double())
+# 
+# # Loop through a range of values for k
+# for (k in 2:40) {
+#   # Run the k-means clustering algorithm
+#   km <- kmodes(df_vars, k, iter.max = 50)
+#   # Store the results in the data frame
+#   results <- rbind(results, data.frame(k = k, WCSS = sum(km$withindiff^2)))
+# }
+# 
+# # Plot the WCSS values for each value of k
+# ggplot(results, aes(x = k, y = WCSS)) +
+#   geom_line() +
+#   geom_point() +
+#   labs(x = "Number of clusters (k)", y = "WCSS")
 ```
 
+
 ```{r}
-# Perform k-means clustering with 3 clusters
-kmeans_results <- kmeans(df_vars, 20)
+# Perform k-means clustering with n clusters
+kmodes_results <- kmodes(df_vars, 20)
 
 df_Q7 <- df
 # Add the cluster labels to the original data
-df_Q7$cluster <- kmeans_results$cluster
+df_Q7$cluster <- kmodes_results$cluster
 
 # Inspect the clusters
 group_by(df_Q7, cluster) %>%
@@ -443,24 +444,24 @@ fig3
 ```{r}
 mean_salary <- tapply(df_Q7$salary_in_usd, df_Q7$cluster, mean)
 # View the mean salary for each level of the experience_level variable
-df_Q7$salary_difference_kmeans <- 0
-df_Q7$predicted_salary_kmeans <-0
+df_Q7$salary_difference_kmodes <- 0
+df_Q7$predicted_salary_kmodes <-0
 
 for (i in 1:nrow(df_Q7)) {
   cluster_index = match(df_Q7$cluster[i], names(mean_salary))
-  df_Q7$salary_difference_kmeans[i] <- df_Q7$salary_in_usd[i] - mean_salary[cluster_index]
-  df_Q7$predicted_salary_kmeans[i] <- mean_salary[cluster_index]
+  df_Q7$salary_difference_kmodes[i] <- df_Q7$salary_in_usd[i] - mean_salary[cluster_index]
+  df_Q7$predicted_salary_kmodes[i] <- mean_salary[cluster_index]
 }
 
-underpaid_employees_kmeans <- df_Q7[df_Q7$salary_difference_kmeans < 0, ]
-overpaid_employees_kmeans <- df_Q7[df_Q7$salary_difference_kmeans > 0, ]
+underpaid_employees_kmodes <- df_Q7[df_Q7$salary_difference_kmodes < 0, ]
+overpaid_employees_kmodes <- df_Q7[df_Q7$salary_difference_kmodes > 0, ]
 
-underpaid_employees_kmeans <- underpaid_employees_kmeans[order(underpaid_employees_kmeans$salary_difference_kmeans), ]
-overpaid_employees_kmeans <- overpaid_employees_kmeans[order(overpaid_employees_kmeans$salary_difference_kmeans, decreasing = TRUE), ]
+underpaid_employees_kmodes <- underpaid_employees_kmodes[order(underpaid_employees_kmodes$salary_difference_kmodes), ]
+overpaid_employees_kmodes <- overpaid_employees_kmodes[order(overpaid_employees_kmodes$salary_difference_kmodes, decreasing = TRUE), ]
 
 # View the underpaid and overpaid employees
-head(underpaid_employees_kmeans, n = 10)
-head(overpaid_employees_kmeans, n=10)
+head(underpaid_employees_kmodes, n = 10)
+head(overpaid_employees_kmodes, n=10)
 ```
 
 ```{r}
@@ -485,10 +486,13 @@ head(overpaid_employees_lm, n=10)
 ```
 
 ```{r}
-df_Q7$kmeans_ratio_error <- ((df_Q7$predicted_salary_kmeans / df_Q7$salary_in_usd)-1)*100
+df_Q7$kmodes_ratio_error <- ((df_Q7$predicted_salary_kmodes / df_Q7$salary_in_usd)-1)*100
 df_Q7$lm_ratio_error <- ((df_Q7$predicted_salary_lm / df_Q7$salary_in_usd)-1)*100
 
-summary(df_Q7[, c("kmeans_ratio_error","lm_ratio_error")])
+summary(df_Q7[, c("kmodes_ratio_error","lm_ratio_error")])
+quantiles_kmodes <- quantile(df_Q7$kmodes_ratio_error, c(0.25,0.75))
+quantiles_lm <- quantile(df_Q7$lm_ratio_error, c(0.25,0.75))
+
 ```
 
 ```{r}
@@ -496,11 +500,11 @@ df_Q7 <- df_Q7[order(df_Q7$salary_in_usd),]
 # Add a column to the dataframe with a sequence of integers
 x <- 1:nrow(df_Q7)
 
-df_Q7$status_lm <- ifelse(df_Q7$lm_ratio_error < -17.07, "Overpaid", 
-                      ifelse(df_Q7$lm_ratio_error < 32.4, "Normal", "Underpaid"))
+df_Q7$status_lm <- ifelse(df_Q7$lm_ratio_error < quantiles_kmodes[1], "Overpaid", 
+                      ifelse(df_Q7$lm_ratio_error < quantiles_kmodes[2], "Normal", "Underpaid"))
 
-df_Q7$status_kmeans <- ifelse(df_Q7$kmeans_ratio_error < -18.88, "Overpaid", 
-                      ifelse(df_Q7$kmeans_ratio_error < 40.26, "Normal", "Underpaid"))
+df_Q7$status_kmodes <- ifelse(df_Q7$kmodes_ratio_error < quantiles_lm[1], "Overpaid", 
+                      ifelse(df_Q7$kmodes_ratio_error < quantiles_lm[2], "Normal", "Underpaid"))
 ```
 
 ```{r}
@@ -519,7 +523,7 @@ ggplot(df_Q7, aes(x = x, y = salary_in_usd)) +
 
 ggplot(df_Q7, aes(x = x, y = salary_in_usd)) +
         geom_point(aes(y = salary_in_usd), size= 2, shape = 20) +
-        geom_point(aes(y = predicted_salary_kmeans, color = status_kmeans), size =2,  shape = 20, alpha = 0.9) + 
+        geom_point(aes(y = predicted_salary_kmodes, color = status_kmodes), size =2,  shape = 20, alpha = 0.9) + 
         scale_color_manual(
           values = c("Overpaid" = "red", "Underpaid" = "orange", "Normal" = "green"), 
           labels = c('Normal', 'Overpaid', 'Underpaid'),
@@ -535,10 +539,10 @@ ggplot(df_Q7, aes(x = x, y = salary_in_usd)) +
 
 ```{r}
 df_Q7$status_lm <- as.factor(df_Q7$status_lm)
-df_Q7$status_kmeans <- as.factor(df_Q7$status_kmeans)
+df_Q7$status_kmodes <- as.factor(df_Q7$status_kmodes)
 
 
-ct <- table(df_Q7$status_lm,df_Q7$status_kmeans)
+ct <- table(df_Q7$status_lm,df_Q7$status_kmodes)
 ct <- ct[c(3,1,2),c(3,1,2)]
 ct <- melt(ct)
 colnames(ct) <- c("LinearRegression", "Clustering", "Count")
@@ -556,8 +560,8 @@ ggplot(ct, aes(x = LinearRegression, y = Clustering, fill = Count)) +
 underpaid_lm <- df_Q7[df_Q7$status_lm=="Underpaid",]
 overpaid_lm <- df_Q7[df_Q7$status_lm=="Overpaid",]
 
-underpaid_kmeans <- df_Q7[df_Q7$status_kmeans =="Underpaid",]
-overpaid_kmeans  <- df_Q7[df_Q7$status_kmeans =="Overpaid",]
+underpaid_kmodes <- df_Q7[df_Q7$status_kmodes =="Underpaid",]
+overpaid_kmodes  <- df_Q7[df_Q7$status_kmodes =="Overpaid",]
 ```
 
 ```{r}
@@ -572,11 +576,11 @@ for (i in 1:length(variables)){
   # plot them in such a way that they can be compared
   df_long_lm <- melt(data.frame(ratio_up_lm, ratio_df, ratio_op_lm))
   
-  ratio_up_kmeans <- table(underpaid_kmeans[, c(variables[i])])/nrow(underpaid_kmeans)
-  ratio_op_kmeans <- table(overpaid_kmeans[, c(variables[i])])/nrow(overpaid_kmeans)
+  ratio_up_kmodes <- table(underpaid_kmodes[, c(variables[i])])/nrow(underpaid_kmodes)
+  ratio_op_kmodes <- table(overpaid_kmodes[, c(variables[i])])/nrow(overpaid_kmodes)
 
   # plot them in such a way that they can be compared
-  df_long_kmeans <- melt(data.frame(ratio_up_kmeans, ratio_df, ratio_op_kmeans))
+  df_long_kmodes <- melt(data.frame(ratio_up_kmodes, ratio_df, ratio_op_kmodes))
 
   print(ggplot(data = df_long_lm, aes(x = variable, y = value , fill = Var1, label = round(value, 2))) +
     geom_bar(stat = "identity", position = "fill") +
@@ -584,7 +588,7 @@ for (i in 1:length(variables)){
     scale_x_discrete(labels = c("Freq"= "Underpaid", "Freq.1"= "Normal", "Freq.2" = "Overpaid")) +
     labs(fill=variables[i], title=paste("Stacked percent bar chart of ",variables[i], " (LM)"), x="Consideration", y = "%"))
   
-   print(ggplot(data = df_long_kmeans, aes(x = variable, y = value , fill = Var1, label = round(value, 2))) +
+   print(ggplot(data = df_long_kmodes, aes(x = variable, y = value , fill = Var1, label = round(value, 2))) +
     geom_bar(stat = "identity", position = "fill") +
     geom_text(size = 3, position = position_stack(vjust = 0.5)) +
     scale_x_discrete(labels = c("Freq"= "Underpaid", "Freq.1"= "Normal", "Freq.2" = "Overpaid")) +

@@ -593,7 +593,90 @@ for (i in 1:length(variables)){
 
 ```
 
-## 8.
+## 8. What is more worth, to work in the office at your region or remotely in another region?
+
+First we should have a look at how much are employees paid while working in the office at their same region.
+
+```{r}
+df_filtered <- filter(df, employee_region == company_region & remote_ratio == "Office")
+
+print(ggplot(aes(x = employee_region, y = salary_in_usd), data = df_filtered) +
+    stat_summary(fun=mean, geom="bar", position = "stack") +
+    xlab("Region") + labs(title="Salary of Office work by Region"))
+```
+
+Here we can see that most of the Regions are underpaid for office work compared to North America, especially the rest of america.
+
+Could they earn more if they work remotely for another Region?
+
+Lets have a look at how much do companies in each region pay for Remote work.
+
+
+```{r}
+df_filtered <- filter(df, employee_region != company_region & remote_ratio == "Remote")
+
+print(ggplot(aes(x = company_region, y = salary_in_usd), data = df_filtered) +
+    stat_summary(fun=mean, geom="bar", position = "stack") +
+    xlab("Region") + labs(title="Salary of Remote work by Region"))
+```
+We can see that by average North America and Europe are close, while the rest are much lower, especially Asia.
+The regions that do not appear, don't employ remote workers from another regions.
+
+In relation to the high paying, we can see that USA pays less for remote work, than for office work. On the other hand in Europe the salary is on the same level for remote and office work.
+
+Now we can focus on answering the question. 
+
+```{r}
+aux <- data.frame(matrix(0, nrow = length(levels(df$company_region)), ncol = length(levels(df$company_region))))
+colnames(aux) <- levels(df$company_region)
+rownames(aux) <- levels(df$company_region)
+
+for (i in 1:nrow(aux)) {
+  max = 0
+  for (j in 1:ncol(aux)) {
+    df_filtered <- filter(df, company_region == colnames(aux)[j] & employee_region == rownames(aux)[i] & remote_ratio == "Remote")
+    aux[i, j] <- mean(df_filtered$salary_in_usd)
+  }
+}
+
+aux_clean <- data.frame(matrix(0, nrow = length(levels(df$company_region)), ncol = length(levels(df$company_region))))
+colnames(aux_clean) <- levels(df$company_region)
+rownames(aux_clean) <- levels(df$company_region)
+
+aux <- replace(aux, is.na(aux), 0)
+
+for (i in 1:nrow(aux_clean)) {
+  max <- 0
+  for (j in 1:ncol(aux_clean)) {
+    if(i == j) {
+      aux_clean[i,j] <- aux[i,j]
+    } else if(aux[i,j]>max){
+      max <- aux[i,j]
+      aux_clean[i,j] <- aux[i,j]
+    }
+  }
+}
+
+
+data_long <- aux_clean %>%
+  rownames_to_column %>%
+  gather(key = 'key', value = 'value', -rowname) %>%
+  filter(value > 0)
+colnames(data_long) <- c("source", "target", "value")
+data_long$target <- paste(data_long$target, " ", sep="")
+
+nodes <- data.frame(name=c(as.character(data_long$source), as.character(data_long$target)) %>% unique())
+ 
+data_long$IDsource=match(data_long$source, nodes$name)-1 
+data_long$IDtarget=match(data_long$target, nodes$name)-1
+
+sankeyNetwork(Links = data_long, Nodes = nodes,
+                     Source = "IDsource", Target = "IDtarget",
+                     Value = "value", NodeID = "name", 
+                     sinksRight=FALSE, nodeWidth=40, fontSize=13, nodePadding=20)
+```
+
+
 ## 9. 
 ## 10. 
 ## 11. 

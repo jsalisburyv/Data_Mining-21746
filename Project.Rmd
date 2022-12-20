@@ -599,11 +599,12 @@ for (i in 1:length(variables)){
 First we should have a look at how much are employees paid while working in the office at their same region.
 
 ```{r}
-df_filtered <- filter(df, employee_region == company_region & remote_ratio == "Office")
+df_filtered <- filter(df, employee_region == company_region)
 
-print(ggplot(aes(x = employee_region, y = salary_in_usd), data = df_filtered) +
+print(ggplot(aes(x = employee_region, y = salary_in_usd, fill=employee_region), data = df_filtered) +
     stat_summary(fun=mean, geom="bar", position = "stack") +
-    xlab("Region") + labs(title="Salary of Office work by Region"))
+    stat_summary(aes(label=round(after_stat(y),2)), fun.y=mean, geom="text", size=3, vjust = -0.5) + 
+    xlab("Region") + labs(title="Salary of any work in the same Region"))
 ```
 
 Here we can see that most of the Regions are underpaid for office work compared to North America, especially the rest of america.
@@ -616,9 +617,10 @@ Lets have a look at how much do companies in each region pay for Remote work.
 ```{r}
 df_filtered <- filter(df, employee_region != company_region & remote_ratio == "Remote")
 
-print(ggplot(aes(x = company_region, y = salary_in_usd), data = df_filtered) +
+print(ggplot(aes(x = company_region, y = salary_in_usd, fill=company_region), data = df_filtered) +
     stat_summary(fun=mean, geom="bar", position = "stack") +
-    xlab("Region") + labs(title="Salary of Remote work by Region"))
+    stat_summary(aes(label=round(after_stat(y),2)), fun.y=mean, geom="text", size=3, vjust = -0.5) + 
+    xlab("Region") + labs(title="Salary of Remote work in another Region"))
 ```
 We can see that by average North America and Europe are close, while the rest are much lower, especially Asia.
 The regions that do not appear, don't employ remote workers from another regions.
@@ -635,7 +637,7 @@ rownames(aux) <- levels(df$company_region)
 for (i in 1:nrow(aux)) {
   max = 0
   for (j in 1:ncol(aux)) {
-    df_filtered <- filter(df, company_region == colnames(aux)[j] & employee_region == rownames(aux)[i] & remote_ratio == "Remote")
+    df_filtered <- filter(df, company_region == colnames(aux)[j] & employee_region == rownames(aux)[i])
     aux[i, j] <- mean(df_filtered$salary_in_usd)
   }
 }
@@ -649,9 +651,10 @@ aux <- replace(aux, is.na(aux), 0)
 for (i in 1:nrow(aux_clean)) {
   max <- 0
   for (j in 1:ncol(aux_clean)) {
-    if(i == j) {
-      aux_clean[i,j] <- aux[i,j]
-    } else if(aux[i,j]>max){
+    #if(i == j) {
+     # aux_clean[i,j] <- aux[i,j]
+    #} else 
+    if(aux[i,j]>max){
       max <- aux[i,j]
       aux_clean[i,j] <- aux[i,j]
     }

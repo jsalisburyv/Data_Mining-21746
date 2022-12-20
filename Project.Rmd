@@ -227,7 +227,7 @@ plot(df$remote_ratio, df$salary_in_usd, xlab="Remote Ratio", ylab="Salary in USD
 plot(df$employee_region, df$salary_in_usd, xlab="employee_region", ylab="Salary in USD")
 ```
 
-## 4. How much more are seniors/experts paid than junior developers?
+## 4. How much should the salary increase be when you get promoted to a higher experience_level?
 
 This could be useful for employees that are going to recieve a promotion, and want
 to know how much they should get paid for their new position.

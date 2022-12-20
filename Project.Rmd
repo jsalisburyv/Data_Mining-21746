@@ -236,10 +236,11 @@ new hires or promoting employees.
 
 ```{r}
 f <- ggplot(df, aes(x=reorder(experience_level,salary_in_usd), y=salary_in_usd))+
-     geom_boxplot()
+     geom_boxplot()+
+     ggtitle("Salary Distribution for each experience level") + ylab("Salary (USD)") + xlab("")
 f
 ```
-As we can see, from ENtry level to EXpert level, as the experience increases, the larger the average salary gets. Lets see if we can find, using clustering, 3 zones for each
+As we can see, from ENtry level to EXecutive level, as the experience increases, the larger the average salary gets. Lets see if we can find, using clustering, 3 zones for each
 
 
 ```{r}
@@ -253,7 +254,7 @@ dfEN$cluster <- as.character(clsEN$cluster)
 f <- ggplot(data=dfEN,mapping=aes(x='EN',y=salary_in_usd))+
   geom_violin(scale="count")+
   geom_point(aes(colour=cluster))
-f
+f + ggtitle("Clusters of salary for entry level") + xlab("") + ylab("Salary (USD)")
 
 dfMI = df[df$experience_level=='MI',]
 quantiles <- quantile(dfMI$salary_in_usd, c(0.05,0.95))
@@ -264,7 +265,7 @@ dfMI$cluster <- as.character(clsMI$cluster)
 f <- ggplot(data=dfMI,mapping=aes(x='MI',y=salary_in_usd))+
   geom_violin(scale="count")+
   geom_point(aes(colour=cluster))
-f
+f + ggtitle("Clusters of salary for mid level") + xlab("") + ylab("Salary (USD)")
 
 dfSE = df[df$experience_level=='SE',]
 quantiles <- quantile(dfSE$salary_in_usd, c(0.05,0.95))
@@ -275,7 +276,7 @@ dfSE$cluster <- as.character(clsSE$cluster)
 f <- ggplot(data=dfSE,mapping=aes(x='SE',y=salary_in_usd))+
   geom_violin(scale="count")+
   geom_point(aes(colour=cluster))
-f
+f+ ggtitle("Clusters of salary for senior level") + xlab("") + ylab("Salary (USD)")
 
 dfEX = df[df$experience_level=='EX',]
 quantiles <- quantile(dfEX$salary_in_usd, c(0.05,0.95))
@@ -286,7 +287,7 @@ dfEX$cluster <- as.character(clsEX$cluster)
 f <- ggplot(data=dfEX,mapping=aes(x='EX',y=salary_in_usd))+
   geom_violin(scale="count")+
   geom_point(aes(colour=cluster))
-f
+f+ ggtitle("Clusters of salary for executive level") + xlab("") + ylab("Salary (USD)")
 ```
 
 Lets try to find the mean salary for each middle cluster per experience level:
@@ -295,12 +296,12 @@ Lets try to find the mean salary for each middle cluster per experience level:
 entry_fair_mean = mean(dfEN$salary_in_usd[dfEN$cluster==2])
 middle_fair_mean = mean(dfMI$salary_in_usd[dfMI$cluster==2])
 senior_fair_mean = mean(dfSE$salary_in_usd[dfSE$cluster==2])
-expert_fair_mean = mean(dfEX$salary_in_usd[dfEX$cluster==2])
+executive_fair_mean = mean(dfEX$salary_in_usd[dfEX$cluster==2])
 
 entry_fair_mean
 middle_fair_mean
 senior_fair_mean
-expert_fair_mean
+executive_fair_mean
 ```
 
 These values indicate the average salary for each experience level of employees that are fairly paid (not underpaid nor overpaid). Now we will try to find the salary increase from one experience level to another.
@@ -309,22 +310,22 @@ These values indicate the average salary for each experience level of employees 
 ```{r}
 entry_to_middle_increase_absolute = middle_fair_mean - entry_fair_mean
 middle_to_senior_increase_absolute  = senior_fair_mean - middle_fair_mean
-senior_to_expert_increase_absolute  = expert_fair_mean - senior_fair_mean
+senior_to_executive_increase_absolute  = executive_fair_mean - senior_fair_mean
 
 entry_to_middle_increase_absolute
 middle_to_senior_increase_absolute
-senior_to_expert_increase_absolute
+senior_to_executive_increase_absolute
 ```
 
 
 ```{r}
 entry_to_middle_increase_relative = (((entry_fair_mean+entry_to_middle_increase_absolute)/entry_fair_mean)-1)
 middle_to_senior_increase_relative = (((middle_fair_mean+middle_to_senior_increase_absolute)/middle_fair_mean)-1)
-senior_to_expert_increase_relative = (((senior_fair_mean+senior_to_expert_increase_absolute)/senior_fair_mean)-1)
+senior_to_executive_increase_relative = (((senior_fair_mean+senior_to_executive_increase_absolute)/senior_fair_mean)-1)
 
 cat(entry_to_middle_increase_relative*100,"%\n")
 cat(middle_to_senior_increase_relative*100,"%\n")
-cat(senior_to_expert_increase_relative*100, "%\n")
+cat(senior_to_executive_increase_relative*100, "%\n")
 ```
 
 The first four values indicate the mean salary of the fairly paid group for each experience level. Using those values, we find the average salary increase from one role to another. As we can see
@@ -597,7 +598,93 @@ for (i in 1:length(variables)){
 
 ```
 
-## 8.
+## 8. What is more worth, to work in the office at your region or remotely in another region?
+
+First we should have a look at how much are employees paid while working in the office at their same region.
+
+```{r}
+df_filtered <- filter(df, employee_region == company_region)
+
+print(ggplot(aes(x = employee_region, y = salary_in_usd, fill=employee_region), data = df_filtered) +
+    stat_summary(fun=mean, geom="bar", position = "stack") +
+    stat_summary(aes(label=round(after_stat(y),2)), fun.y=mean, geom="text", size=3, vjust = -0.5) + 
+    xlab("Region") + labs(title="Salary of any work in the same Region"))
+```
+
+Here we can see that most of the Regions are underpaid for office work compared to North America, especially the rest of america.
+
+Could they earn more if they work remotely for another Region?
+
+Lets have a look at how much do companies in each region pay for Remote work.
+
+
+```{r}
+df_filtered <- filter(df, employee_region != company_region & remote_ratio == "Remote")
+
+print(ggplot(aes(x = company_region, y = salary_in_usd, fill=company_region), data = df_filtered) +
+    stat_summary(fun=mean, geom="bar", position = "stack") +
+    stat_summary(aes(label=round(after_stat(y),2)), fun.y=mean, geom="text", size=3, vjust = -0.5) + 
+    xlab("Region") + labs(title="Salary of Remote work in another Region"))
+```
+We can see that by average North America and Europe are close, while the rest are much lower, especially Asia.
+The regions that do not appear, don't employ remote workers from another regions.
+
+In relation to the high paying, we can see that USA pays less for remote work, than for office work. On the other hand in Europe the salary is on the same level for remote and office work.
+
+Now we can focus on answering the question. 
+
+```{r}
+aux <- data.frame(matrix(0, nrow = length(levels(df$company_region)), ncol = length(levels(df$company_region))))
+colnames(aux) <- levels(df$company_region)
+rownames(aux) <- levels(df$company_region)
+
+for (i in 1:nrow(aux)) {
+  max = 0
+  for (j in 1:ncol(aux)) {
+    df_filtered <- filter(df, company_region == colnames(aux)[j] & employee_region == rownames(aux)[i])
+    aux[i, j] <- mean(df_filtered$salary_in_usd)
+  }
+}
+
+aux_clean <- data.frame(matrix(0, nrow = length(levels(df$company_region)), ncol = length(levels(df$company_region))))
+colnames(aux_clean) <- levels(df$company_region)
+rownames(aux_clean) <- levels(df$company_region)
+
+aux <- replace(aux, is.na(aux), 0)
+
+for (i in 1:nrow(aux_clean)) {
+  max <- 0
+  for (j in 1:ncol(aux_clean)) {
+    #if(i == j) {
+     # aux_clean[i,j] <- aux[i,j]
+    #} else 
+    if(aux[i,j]>max){
+      max <- aux[i,j]
+      aux_clean[i,j] <- aux[i,j]
+    }
+  }
+}
+
+
+data_long <- aux_clean %>%
+  rownames_to_column %>%
+  gather(key = 'key', value = 'value', -rowname) %>%
+  filter(value > 0)
+colnames(data_long) <- c("source", "target", "value")
+data_long$target <- paste(data_long$target, " ", sep="")
+
+nodes <- data.frame(name=c(as.character(data_long$source), as.character(data_long$target)) %>% unique())
+ 
+data_long$IDsource=match(data_long$source, nodes$name)-1 
+data_long$IDtarget=match(data_long$target, nodes$name)-1
+
+sankeyNetwork(Links = data_long, Nodes = nodes,
+                     Source = "IDsource", Target = "IDtarget",
+                     Value = "value", NodeID = "name", 
+                     sinksRight=FALSE, nodeWidth=40, fontSize=13, nodePadding=20)
+```
+
+
 ## 9. 
 ## 10. 
 ## 11. 
@@ -672,6 +759,14 @@ Let's go through the different plots and check if we can identify any disparity:
   - Industry: in terms of the company industry we can't say much about it since data and ML/AI companies are quite similar when it comes to wages.
   - Leadership position: we can clearly observe how having a leadership position in the company usually implies a higher salary in return.
   - Involved in research projects: on the other hand, participating in research projects seems to be not so interesting, at least from the financial perspective, since most other people earn higher salaries than the ones that participate in this kind of projects.
+
+```{r}
+increase = (mean(df[df$work_year == 2022, 'salary_in_usd'])/mean(df[df$work_year == 2021, 'salary_in_usd'])) - 1
+net_increase = increase - 0.077 # official inflation rate in 2022 in the US
+net_increase
+```
+
+It seems like the increase in salaries between 2021 and 2022 is not explained only with the inflation, since the increase has been of over a 34% in total and the official 2022 inflation rate that the US government gives is ay 7.7%. The net salary increase taking that into account (most samples of the data are US based), net salaries have increased a 27.17%.
 
 ## 14. 
 ## 15. 

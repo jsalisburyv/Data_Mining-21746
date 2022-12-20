@@ -200,7 +200,33 @@ ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remot
 
 ## 1. 
 ## 2. 
-## 3. 
+## 3. Can we predict an employee's salary based on their job title, experience level, and location using machine learning algorithms?
+
+```{r}
+
+```
+
+## For us, students who are now finishing their degree. What is the best combination (based on salary)?
+
+```{r}
+df_Q7 <- df
+# Make a graphic where experience_level = EN, y axis = salary_in_usd, x axis = country
+df_Q7 <- df_Q7[df_Q7$experience_level == 'EN',]
+df_Q7 <- df_Q7[df_Q7$remote_ratio == '0%',]
+df_Q7 <- df_Q7[df_Q7$boss == 'NO',]
+df_Q7 <- df_Q7[df_Q7$research == FALSE,]
+df_Q7 <- df_Q7[df_Q7$role == 'DEVELOPER',]
+df_Q7 <- df_Q7[df_Q7$work_year == 2022,]
+df_Q7 <- df_Q7[df_Q7$job_title == 'Software Engineer',]
+df_Q7 <- df_Q7[df_Q7$company_industry == 'Information Technology and Services',]
+df_Q7 <- df_Q7[df_Q7$company_sector == 'Information Technology',]
+
+plot(df$remote_ratio, df$salary_in_usd, xlab="Remote Ratio", ylab="Salary in USD")
+
+# Make a graphic where x axis = region, y axis = salary_in_usd
+plot(df$employee_region, df$salary_in_usd, xlab="employee_region", ylab="Salary in USD")
+```
+
 ## 4. How much more are seniors/experts paid than junior developers?
 
 This could be useful for employees that are going to recieve a promotion, and want

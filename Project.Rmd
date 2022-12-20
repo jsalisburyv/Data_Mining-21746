@@ -261,7 +261,7 @@ dfMI <- dfMI[dfMI$salary_in_usd > quantiles[1] & dfMI$salary_in_usd < quantiles[
 dfMI <- dfMI[c('salary_in_usd')]
 clsMI <- kmeans(x=dfMI, centers=3)
 dfMI$cluster <- as.character(clsMI$cluster)
-f <- ggplot(data=dfMI,mapping=aes(x='EN',y=salary_in_usd))+
+f <- ggplot(data=dfMI,mapping=aes(x='MI',y=salary_in_usd))+
   geom_violin(scale="count")+
   geom_point(aes(colour=cluster))
 f
@@ -272,7 +272,7 @@ dfSE <- dfSE[dfSE$salary_in_usd > quantiles[1] & dfSE$salary_in_usd < quantiles[
 dfSE <- dfSE[c('salary_in_usd')]
 clsSE <- kmeans(x=dfSE, centers=3)
 dfSE$cluster <- as.character(clsSE$cluster)
-f <- ggplot(data=dfSE,mapping=aes(x='EN',y=salary_in_usd))+
+f <- ggplot(data=dfSE,mapping=aes(x='SE',y=salary_in_usd))+
   geom_violin(scale="count")+
   geom_point(aes(colour=cluster))
 f
@@ -283,7 +283,7 @@ dfEX <- dfEX[dfEX$salary_in_usd > quantiles[1] & dfEX$salary_in_usd < quantiles[
 dfEX <- dfEX[c('salary_in_usd')]
 clsEX <- kmeans(x=dfEX, centers=3)
 dfEX$cluster <- as.character(clsEX$cluster)
-f <- ggplot(data=dfEX,mapping=aes(x='EN',y=salary_in_usd))+
+f <- ggplot(data=dfEX,mapping=aes(x='EX',y=salary_in_usd))+
   geom_violin(scale="count")+
   geom_point(aes(colour=cluster))
 f

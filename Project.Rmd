@@ -19,7 +19,7 @@ library(networkD3)
 library(scales)
 library(reshape)
 library(klaR)
-
+library(countrycode)
 
 set.seed(999)
 ```
@@ -773,11 +773,34 @@ It seems like the increase in salaries between 2021 and 2022 is not explained on
 ## 15. 
 
 
-## N. Join cost of living index dataset into problem dataset
+## INTENTO FALLIDO. Join cost of living index dataset into problem dataset
+
+We only want the country and the cost of living and we delete Kosovo from the list since it is a disputed territory and luckily enough we don't have any Kosovo related data in our dataset
+```{r}
+cost_of_living_df = read.csv("Cost_of_Living_Index_2022.csv", stringsAsFactors = TRUE)[-67, c(2,3)]
+cost_of_living_df = setNames(cost_of_living_df, c("country", "cost_of_living_index"))
+cost_of_living_df$country = countrycode(cost_of_living_df$country, origin = 'country.name', destination = 'iso2c')
+```
+
+Add the cost of living index columns of the employee residence and the company location deleting those rows that contain either American Samoa or Aaland Islands, since we don't have information about the cost of living index in these countries.
 
 ```{r}
-library(countrycode)
-cost_of_living_df = read.csv("Cost_of_Living_Index_2022.csv", stringsAsFactors = TRUE)
-cost_of_living_df$Country = countrycode(cost_of_living_df$Country, origin = 'country.name', destination = 'iso2c')
-df$cost_index = cost_of_living_df[cost_of_living_df$Country == df$employee_residence, ]$Country
+dfN<-subset(df, employee_residence!="AX" & employee_residence!="AS" & company_location!="AX" & company_location!="AS")
+dfN$cost_of_living_index_employee = rep(0, nrow(dfN))
+dfN$cost_of_living_index_company = rep(0, nrow(dfN))
+for(i in 1:nrow(dfN)) {
+  country_employee = dfN[i, ]$employee_residence
+  country_company = dfN[i, ]$company_location
+  index_employee =  cost_of_living_df[as.character(cost_of_living_df$country)==as.character(country_employee), ]$cost_of_living_index
+  index_company = cost_of_living_df[as.character(cost_of_living_df$country)==as.character(country_company), ]$cost_of_living_index
+  dfN[i,]$cost_of_living_index_employee = index_employee
+  dfN[i,]$cost_of_living_index_company = index_company
+}
+```
+
+Let's find the employees that live in a cheaper country than the one that they work for.
+
+```{r}
+subset(dfN, cost_of_living_index_employee>cost_of_living_index_company)
+subset(dfN, as.character(company_location)!=as.character(employee_residence))
 ```

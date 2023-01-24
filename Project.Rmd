@@ -231,7 +231,7 @@ ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remot
 # plot(df$employee_region, df$salary_in_usd, xlab="employee_region", ylab="Salary in USD")
 ```
 
-## 4. How much should the salary increase be when you get promoted to a higher experience_level?
+## 4. How much should the salary increase be when you get promoted to a higher Experience Level? (according to similar colleagues with the same job area).
 
 This could be useful for employees that are going to recieve a promotion, and want
 to know how much they should get paid for their new position.
@@ -249,90 +249,44 @@ As we can see, from ENtry level to EXecutive level, as the experience increases,
 
 ```{r}
 set.seed(42)
-dfEN = df[df$experience_level=='EN',]
-quantiles <- quantile(dfEN$salary_in_usd, c(0.05,0.95))
-dfEN <- dfEN[dfEN$salary_in_usd > quantiles[1] & dfEN$salary_in_usd < quantiles[2],]
-dfEN <- dfEN[c('salary_in_usd')]
-clsEN <- kmeans(x=dfEN, centers=3)
-dfEN$cluster <- as.character(clsEN$cluster)
-f <- ggplot(data=dfEN,mapping=aes(x='EN',y=salary_in_usd))+
-  geom_violin(scale="count")+
-  geom_point(aes(colour=cluster))
-f + ggtitle("Clusters of salary for entry level") + xlab("") + ylab("Salary (USD)")
+df_split_industry <- split(df, df$industry)
+names(df_split_industry) <- c("df_data", "df_ai", "df_other")
+list2env(df_split_industry, envir = .GlobalEnv)
 
-dfMI = df[df$experience_level=='MI',]
-quantiles <- quantile(dfMI$salary_in_usd, c(0.05,0.95))
-dfMI <- dfMI[dfMI$salary_in_usd > quantiles[1] & dfMI$salary_in_usd < quantiles[2],]
-dfMI <- dfMI[c('salary_in_usd')]
-clsMI <- kmeans(x=dfMI, centers=3)
-dfMI$cluster <- as.character(clsMI$cluster)
-f <- ggplot(data=dfMI,mapping=aes(x='MI',y=salary_in_usd))+
-  geom_violin(scale="count")+
-  geom_point(aes(colour=cluster))
-f + ggtitle("Clusters of salary for mid level") + xlab("") + ylab("Salary (USD)")
+get_average_level_salary <- function(dFrame){
+  mean_en = mean(dFrame[dFrame$experience_level=="EN","salary_in_usd"])
+  mean_mi = mean(dFrame[dFrame$experience_level=="MI","salary_in_usd"])
+  mean_se = mean(dFrame[dFrame$experience_level=="SE","salary_in_usd"])
+  mean_ex = mean(dFrame[dFrame$experience_level=="EX","salary_in_usd"])
+  ret = data.frame(c("EN","MI","SE","EX"),c(mean_en, mean_mi, mean_se, mean_ex))
+  colnames(ret) <- c("Experience_Level","Average_Salary")
+  ret$Experience_Level = factor(ret$Experience_Level, levels = c("EN","MI","SE","EX"))
+  return(ret)
+}
 
-dfSE = df[df$experience_level=='SE',]
-quantiles <- quantile(dfSE$salary_in_usd, c(0.05,0.95))
-dfSE <- dfSE[dfSE$salary_in_usd > quantiles[1] & dfSE$salary_in_usd < quantiles[2],]
-dfSE <- dfSE[c('salary_in_usd')]
-clsSE <- kmeans(x=dfSE, centers=3)
-dfSE$cluster <- as.character(clsSE$cluster)
-f <- ggplot(data=dfSE,mapping=aes(x='SE',y=salary_in_usd))+
-  geom_violin(scale="count")+
-  geom_point(aes(colour=cluster))
-f+ ggtitle("Clusters of salary for senior level") + xlab("") + ylab("Salary (USD)")
-
-dfEX = df[df$experience_level=='EX',]
-quantiles <- quantile(dfEX$salary_in_usd, c(0.05,0.95))
-dfEX <- dfEX[dfEX$salary_in_usd > quantiles[1] & dfEX$salary_in_usd < quantiles[2],]
-dfEX <- dfEX[c('salary_in_usd')]
-clsEX <- kmeans(x=dfEX, centers=3)
-dfEX$cluster <- as.character(clsEX$cluster)
-f <- ggplot(data=dfEX,mapping=aes(x='EX',y=salary_in_usd))+
-  geom_violin(scale="count")+
-  geom_point(aes(colour=cluster))
-f+ ggtitle("Clusters of salary for executive level") + xlab("") + ylab("Salary (USD)")
+data_avg = get_average_level_salary(df_data)
+ai_avg = get_average_level_salary(df_ai)
+other_avg = get_average_level_salary(df_other)
 ```
-
-Lets try to find the mean salary for each middle cluster per experience level:
 
 ```{r}
-entry_fair_mean = mean(dfEN$salary_in_usd[dfEN$cluster==2])
-middle_fair_mean = mean(dfMI$salary_in_usd[dfMI$cluster==2])
-senior_fair_mean = mean(dfSE$salary_in_usd[dfSE$cluster==2])
-executive_fair_mean = mean(dfEX$salary_in_usd[dfEX$cluster==2])
 
-entry_fair_mean
-middle_fair_mean
-senior_fair_mean
-executive_fair_mean
+custom_line_plot <- function(datos,avgs, title){
+  plot1 <- ggplot()+
+            geom_violin(data=datos, aes(x=reorder(experience_level,salary_in_usd), y = salary_in_usd))+ 
+  geom_line(data=avgs,aes(x=Experience_Level, y=Average_Salary, group=1))+
+  geom_point(data=avgs,aes(x=Experience_Level, y=Average_Salary, group=1))+
+  geom_text(data=avgs,aes(x=Experience_Level, y=Average_Salary, label = round(Average_Salary,0)) ,hjust=-0.2, vjust=-1)+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 15))+
+  labs(title=title)
+  plot1
+}
+
+custom_line_plot(df_data,data_avg,"Data Industry")
+custom_line_plot(df_ai,ai_avg,"AI/ML Industry")
+custom_line_plot(df_other, other_avg,"Other Industries")
+
 ```
-
-These values indicate the average salary for each experience level of employees that are fairly paid (not underpaid nor overpaid). Now we will try to find the salary increase from one experience level to another.
-
-
-```{r}
-entry_to_middle_increase_absolute = middle_fair_mean - entry_fair_mean
-middle_to_senior_increase_absolute  = senior_fair_mean - middle_fair_mean
-senior_to_executive_increase_absolute  = executive_fair_mean - senior_fair_mean
-
-entry_to_middle_increase_absolute
-middle_to_senior_increase_absolute
-senior_to_executive_increase_absolute
-```
-
-
-```{r}
-entry_to_middle_increase_relative = (((entry_fair_mean+entry_to_middle_increase_absolute)/entry_fair_mean)-1)
-middle_to_senior_increase_relative = (((middle_fair_mean+middle_to_senior_increase_absolute)/middle_fair_mean)-1)
-senior_to_executive_increase_relative = (((senior_fair_mean+senior_to_executive_increase_absolute)/senior_fair_mean)-1)
-
-cat(entry_to_middle_increase_relative*100,"%\n")
-cat(middle_to_senior_increase_relative*100,"%\n")
-cat(senior_to_executive_increase_relative*100, "%\n")
-```
-
-The first four values indicate the mean salary of the fairly paid group for each experience level. Using those values, we find the average salary increase from one role to another. As we can see
 
 
 

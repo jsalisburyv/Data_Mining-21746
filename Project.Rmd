@@ -18,7 +18,7 @@ library(plotly)
 library(networkD3)
 library(scales)
 library(reshape)
-library(klaR)
+#library(klaR)
 library(countrycode)
 library(ISLR)
 library(rpart)
@@ -27,10 +27,6 @@ library(rpart.plot)
 set.seed(999)
 ```
 
-### Comentarios
-- Casi todos son Full Time
-- MIRAR OUTLIERS
-- Nuevas columnas: 
 
 ## Exploratory Data Analysis
 
@@ -39,6 +35,7 @@ df <- read.csv("salaries.csv", stringsAsFactors = TRUE)
 summary(df)
 str(df)
 ```
+
 
 ```{r}
 anyNA(df)
@@ -57,28 +54,36 @@ levels(df$salary_group) <- c("25k", "50k", "75k", "100k", "125k", "150k", "200k"
 
 ```{r}
 # group df$employee_residence to different regions in the world. The data is in ISO 3166-1 alpha-2 format. Regions like North America, Europe, Asia, etc.
+
+northAmerica <-c("US", "CA", "MX")
+southAmerica <- c("AR", "BO", "BR", "CL", "CO")
+centralAmerica <- c("CR", "DO", "HN", "PR")
+europe <- c("AL", "AT", "AX", "BE", "BG", "CH", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GB", "GR", "HR", "HU", "IE", "IS", "IT", "JE", "LU", "MD", "MT", "NL", "PL", "PT", "RO", "RS", "RU", "SI", "TR", "UA")
+asia <- c("AE", "CN", "HK", "ID", "IL", "IN", "IQ", "IR", "JP", "MY", "PH", "PK", "QA", "SG", "TH", "VN")
+africa <- c("DZ", "EG", "KE", "NG", "TN", "TZ")
+oceania <- c("AU", "NZ", "AS")
+
 df$employee_region <- as.factor(df$employee_residence)
 levels(df$employee_region) <- list(  
-  "North America" = c("US", "CA", "MX"),   
-  "South America" = c("AR", "BO", "BR", "CL", "CO", "EC", "PE", "PY", "UY", "VE"),   
-  "Central America" = c("BZ", "CR", "DO", "GT", "HN", "NI", "PA", "PR", "SV"),
-  "Europe" = c("AT", "AX", "BE", "BG", "CH", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GB", "GR", "HR", "HU", "IE", "IS", "IT", "JE", "LT", "LU", "LV", "MD", "MT", "NL", "NO", "PL", "PT", "RO", "RU", "RS", "SE", "SI", "SK", "TR", "UA"),
-  "Asia" = c("AE", "AF", "AM", "AZ", "BD", "BH", "BN", "CN", "GE", "HK", "ID", "IL", "IN", "IQ", "IR", "JO", "JP", "KG", "KH", "KP", "KR", "KW", "KZ", "LA", "LB", "LK", "MM", "MN", "MO", "MV", "MY", "NP", "OM", "PH", "PK", "QA", "SA", "SG", "SY", "TH", "TJ", "TM", "TW", "UZ", "VN", "YE"),   
-  "Africa" = c("AO", "BF", "BI", "BJ", "BW", "CD", "CF", "CG", "CI", "CM", "CV", "DJ", "DZ", "EG", "EH", "ER", "ET", "GA", "GH", "GM", "GN", "GQ", "GW", "KE", "KM", "LR", "LS", "LY", "MA", "MG", "ML", "MR", "MU", "MW", "MZ", "NA", "NE", "NG", "RE", "RW", "SC", "SD", "SH", "SL", "SN", "SO", "ST", "SZ", "TD", "TG", "TN", "TZ", "UG", "YT", "ZA", "ZM", "ZW"), 
-  "Oceania" = c("AU", "FJ", "FM", "GU", "KI", "MH", "MP", "NC", "NF", "NR", "NU", "NZ", "PF", "PG", "PN", "PW", "SB", "TK", "TO", "TV", "UM", "VU", "WF", "WS"))
+  "North America" = northAmerica,   
+  "South America" = southAmerica,   
+  "Central America" = centralAmerica,
+  "Europe" = europe,
+  "Asia" = asia,   
+  "Africa" = africa, 
+  "Oceania" = oceania)
 
 df$company_region <- as.factor(df$company_location)
 levels(df$company_region) <- list(  
-  "North America" = c("US", "CA", "MX"),   
-  "South America" = c("AR", "BO", "BR", "CL", "CO", "EC", "PE", "PY", "UY", "VE"),   
-  "Central America" = c("BZ", "CR", "DO", "GT", "HN", "NI", "PA", "PR", "SV"),
-  "Europe" = c("AT", "AL", "AX", "BE", "BG", "CH", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GB", "GR", "HR", "HU", "IE", "IS", "IT", "JE", "LT", "LU", "LV", "MD", "MT", "NL", "NO", "PL", "PT", "RO", "RU", "RS", "SE", "SI", "SK", "TR", "UA"),
-  "Asia" = c("AE", "AF", "AM", "AZ", "BD", "BH", "BN", "CN", "GE", "HK", "ID", "IL", "IN", "IQ", "IR", "JO", "JP", "KG", "KH", "KP", "KR", "KW", "KZ", "LA", "LB", "LK", "MM", "MN", "MO", "MV", "MY", "NP", "OM", "PH", "PK", "QA", "SA", "SG", "SY", "TH", "TJ", "TM", "TW", "UZ", "VN", "YE"),   
-  "Africa" = c("AO", "BF", "BI", "BJ", "BW", "CD", "CF", "CG", "CI", "CM", "CV", "DJ", "DZ", "EG", "EH", "ER", "ET", "GA", "GH", "GM", "GN", "GQ", "GW", "KE", "KM", "LR", "LS", "LY", "MA", "MG", "ML", "MR", "MU", "MW", "MZ", "NA", "NE", "NG", "RE", "RW", "SC", "SD", "SH", "SL", "SN", "SO", "ST", "SZ", "TD", "TG", "TN", "TZ", "UG", "YT", "ZA", "ZM", "ZW"), 
-  "Oceania" = c("AU", "AS", "FJ", "FM", "GU", "KI", "MH", "MP", "NC", "NF", "NR", "NU", "NZ", "PF", "PG", "PN", "PW", "SB", "TK", "TO", "TV", "UM", "VU", "WF", "WS"))
-
-summary(df)
+  "North America" = northAmerica,   
+  "South America" = southAmerica,   
+  "Central America" = centralAmerica,
+  "Europe" = europe,
+  "Asia" = asia,   
+  "Africa" = africa, 
+  "Oceania" = oceania)
 ```
+
 
 ```{r}
 aux <- data.frame(matrix(0, nrow = length(levels(df$company_region)), ncol = length(levels(df$company_region))))
@@ -106,8 +111,10 @@ data_long$IDtarget=match(data_long$target, nodes$name)-1
 sankeyNetwork(Links = data_long, Nodes = nodes,
                      Source = "IDsource", Target = "IDtarget",
                      Value = "value", NodeID = "name", 
-                     sinksRight=FALSE, nodeWidth=40, fontSize=13, nodePadding=20)
+                     sinksRight=FALSE, nodeWidth=30, fontSize=14, nodePadding=15)
+
 ```
+
 
 ```{r}
 levels(factor(df$job_title))  
@@ -138,10 +145,11 @@ df$research <- ifelse(grepl("research", df$job_title, ignore.case = T), TRUE, FA
 summary(df)
 
 ```
+
 ```{r}
 mean(df$salary_in_usd)
-mean(df[df$boss == 'NO', 'salary_in_usd'])
-mean(df[df$boss == 'YES', 'salary_in_usd'])
+mean(df[df$boss == FALSE, 'salary_in_usd'])
+mean(df[df$boss == TRUE, 'salary_in_usd'])
 ```
 
 ```{r}
@@ -197,7 +205,15 @@ y_2022$work_year <- 2022
 
 y <- rbind(y_2020, y_2021, y_2022)
 
-ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remote_ratio)) + geom_line() + geom_point() + labs(x = "Work Year", y = "Percentage of Remote Ratio", title = "Remote Ratio by Work Year") + theme(plot.title = element_text(hjust = 0.5))
+ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remote_ratio)) +
+  geom_line()+
+  geom_point() + 
+  labs(x = "Work Year", y = "Percentage of Remote Ratio", title = "Remote Ratio by Work Year") +
+  theme(plot.title = element_text(hjust = 0.5), axis.text=element_text(size=12),
+        axis.title=element_text(size=12)) +
+  scale_x_continuous(breaks = c(2020, 2021, 2022))
+
+
 ```
 
 # Questions

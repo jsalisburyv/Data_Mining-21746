@@ -288,7 +288,40 @@ custom_line_plot(df_other, other_avg,"Other Industries")
 
 ```
 
+## Extra Sanso: Decision Tree
 
+```{r}
+library(rpart)
+library(rpart.plot)
+
+#First we remove some columns that wont apport useful information to the model:
+
+dfTree <- df
+dfTree$salary_currency <- NULL
+
+#First we are going to try to predict salary with a regression tree. We are going to eliminate the created "salary_group" column because otherwise it would be kinda cheating
+
+dfTreeRegression<- dfTree
+dfTreeRegression$salary_group <- NULL
+set.seed(42)
+sample <- sample(c(TRUE, FALSE), nrow(dfTreeRegression), replace=TRUE, prob=c(0.8,0.2))
+Tree_train  <- dfTreeRegression[sample, ]
+Tree_test   <- dfTreeRegression[!sample, ]
+
+```
+
+```{r}
+fit <- rpart(salary_in_usd~., data = Tree_train, method="anova")
+rules1 <- rpart.rules(fit)
+
+test_pred <- predict(fit, Tree_test, type="vector")
+results <- data.frame(test_pred, Tree_test$salary_in_usd)
+results$residuals <- results$test_pred-results$Tree_test.salary_in_usd
+plot(results$residuals)
+abline(0,0, col="red")
+mean(results$residuals)
+sd(results$residuals)
+```
 
 ## 5. Do bigger companies pay more to their employees?
 ## 6. 

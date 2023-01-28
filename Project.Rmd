@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(dplyr)
 library(ggdist)
+library(caret)
 library(tidyverse)
 library(plotly)
 library(networkD3)
@@ -700,6 +701,45 @@ sankeyNetwork(Links = data_long, Nodes = nodes,
                      Source = "IDsource", Target = "IDtarget",
                      Value = "value", NodeID = "name", 
                      sinksRight=FALSE, nodeWidth=40, fontSize=13, nodePadding=20)
+```
+
+EXTRA JONATHAN
+
+What factors seem to have the most impact on determining an employee's job level within the company, as indicated by the data provided in the dataset?
+
+```{r}
+set.seed(123)
+df_no_s <- select(df, -salary_group, -salary_currency, -salary_in_usd)
+train_index <- createDataPartition(df_no_s$experience_level, p = 0.7, list = FALSE)
+train_data <- df_no_s[train_index, ]
+test_data <- df_no_s[-train_index, ]
+
+```
+
+
+```{r}
+model <- train(experience_level ~ ., data = train_data, method = "knn", tuneGrid = expand.grid(k = 1:20))
+
+```
+
+```{r}
+print(model$bestTune$k)
+summary(model)
+```
+
+
+```{r}
+importance <- varImp(model)
+plot(importance)
+
+```
+
+
+```{r}
+predictions <- predict(model, test_data)
+confusionMatrix(predictions, test_data$experience_level)
+confusionMatrix$byClass[1]
+```
 ```
 
 

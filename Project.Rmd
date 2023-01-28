@@ -327,16 +327,27 @@ Tree_test   <- dfTreeRegression[!sample, ]
 ```
 
 ```{r}
-fit <- rpart(salary_in_usd~., data = Tree_train, method="anova")
+#Con el parametro "cp", cuanto mas proximo a 0, menos poda hace.
+fit <- rpart(salary_in_usd~., data = Tree_train, method="anova", control = list(cp = 0))
 rules1 <- rpart.rules(fit)
 
-test_pred <- predict(fit, Tree_test, type="vector")
+test_pred <- predict(fit, Tree_test, method="anova")
 results <- data.frame(test_pred, Tree_test$salary_in_usd)
 results$residuals <- results$test_pred-results$Tree_test.salary_in_usd
 plot(results$residuals)
 abline(0,0, col="red")
 mean(results$residuals)
 sd(results$residuals)
+```
+```{r}
+#1: monica. 2: dawid. 3: TODO wallis
+datos <- Tree_test[1,]
+datos[1,] = list(2022,"MI", "FT", "Data Scientist", 0, "ES", "Hybrid", "ES", "S", "Europe", "Europe", "DATA", FALSE, "SCIENTIST", FALSE)
+datos[2,] = list(2022,"MI", "FT", "ML Engineer", 0, "ES", "Hybrid", "ES", "L", "Europe", "Europe", "ML/AI", FALSE, "ENGINEER", FALSE)
+options(width=1000)
+
+salarios = rpart.predict(fit, datos)
+salarios
 ```
 
 ## 5. Do bigger companies pay more to their employees?

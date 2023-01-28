@@ -831,9 +831,6 @@ BASE MODEL: Predict experience level with only salary and job title; since job t
 
 ```{r}
 df14 = df[, c("industry", "role", "salary_in_usd", "experience_level")]
-# df14_sample <- sample(c(TRUE, FALSE), nrow(df14), replace=TRUE, prob=c(0.7,0.3))
-# df14_train  <- df14[df14_sample, ]
-# df14_test   <- df14[!df14_sample, ]
 dt14 = rpart(experience_level~., data=df14)
 rpart.plot(dt14)
 ```
@@ -842,9 +839,6 @@ ADVANCED MODEL: Predict experience level with all of the variables available (ap
 
 ```{r}
 df14v2 = df[ , -which(names(df) %in% c("job_title", "work_year", "ID", "company_location", "employee_residence", "employee_region", "company_region", "salary_group", "salary_currency", "remote_ratio"))]
-# df14_samplev2 <- sample(c(TRUE, FALSE), nrow(df14v2), replace=TRUE, prob=c(0.7,0.3))
-# df14_trainv2  <- df14v2[df14_samplev2, ]
-# df14_testv2   <- df14v2[!df14_samplev2, ]
 summary(df14v2)
 dt14v2 = rpart(experience_level~., data=df14v2)
 rpart.plot(dt14v2)

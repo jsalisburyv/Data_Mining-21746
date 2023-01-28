@@ -349,6 +349,43 @@ options(width=1000)
 salarios = rpart.predict(fit, datos)
 salarios
 ```
+```{r}
+levels(datos$company_location)
+```
+
+```{r}
+grid <- expand.grid(
+  work_year = c(2022),
+  experience_level = c("EN"),
+  employment_type = levels(datos$employment_type),
+  job_title = c("ML Engineer"),
+  salary_in_usd = 0,
+  employee_residence = levels(datos$employee_residence),
+  remote_ratio = levels(datos$remote_ratio),
+  company_location = c("US"),
+  company_size = levels(datos$company_size),
+  employee_region = c("North America"),
+  company_region = c("North America"),
+  industry = levels(datos$industry),
+  boss = c(FALSE),
+  role = c("ENGINEER"),
+  research = c(FALSE)
+)
+grid
+```
+
+```{r}
+prediction <- vector("numeric", 6812)
+for(i in 1:nrow(grid)){
+  prediction[i] <- rpart.predict(fit, newdata = grid[i,])
+}
+```
+
+```{r}
+best_combination <- grid[which.max(prediction), ]
+best_combination
+```
+
 
 ## 5. Do bigger companies pay more to their employees?
 ## 6. 

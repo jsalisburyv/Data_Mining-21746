@@ -350,6 +350,43 @@ options(width=1000)
 salarios = rpart.predict(fit, datos)
 salarios
 ```
+```{r}
+levels(datos$company_location)
+```
+
+```{r}
+grid <- expand.grid(
+  work_year = c(2022),
+  experience_level = c("EN"),
+  employment_type = levels(datos$employment_type),
+  job_title = c("ML Engineer"),
+  salary_in_usd = 0,
+  employee_residence = levels(datos$employee_residence),
+  remote_ratio = levels(datos$remote_ratio),
+  company_location = c("US"),
+  company_size = levels(datos$company_size),
+  employee_region = c("North America"),
+  company_region = c("North America"),
+  industry = levels(datos$industry),
+  boss = c(FALSE),
+  role = c("ENGINEER"),
+  research = c(FALSE)
+)
+grid
+```
+
+```{r}
+prediction <- vector("numeric", 6812)
+for(i in 1:nrow(grid)){
+  prediction[i] <- rpart.predict(fit, newdata = grid[i,])
+}
+```
+
+```{r}
+best_combination <- grid[which.max(prediction), ]
+best_combination
+```
+
 
 ## 5. Do bigger companies pay more to their employees?
 ## 6. 
@@ -834,9 +871,6 @@ BASE MODEL: Predict experience level with only salary and job title; since job t
 
 ```{r}
 df14 = df[, c("industry", "role", "salary_in_usd", "experience_level")]
-# df14_sample <- sample(c(TRUE, FALSE), nrow(df14), replace=TRUE, prob=c(0.7,0.3))
-# df14_train  <- df14[df14_sample, ]
-# df14_test   <- df14[!df14_sample, ]
 dt14 = rpart(experience_level~., data=df14)
 rpart.plot(dt14)
 ```
@@ -845,9 +879,6 @@ ADVANCED MODEL: Predict experience level with all of the variables available (ap
 
 ```{r}
 df14v2 = df[ , -which(names(df) %in% c("job_title", "work_year", "ID", "company_location", "employee_residence", "employee_region", "company_region", "salary_group", "salary_currency", "remote_ratio"))]
-# df14_samplev2 <- sample(c(TRUE, FALSE), nrow(df14v2), replace=TRUE, prob=c(0.7,0.3))
-# df14_trainv2  <- df14v2[df14_samplev2, ]
-# df14_testv2   <- df14v2[!df14_samplev2, ]
 summary(df14v2)
 dt14v2 = rpart(experience_level~., data=df14v2)
 rpart.plot(dt14v2)

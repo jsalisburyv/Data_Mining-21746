@@ -305,21 +305,31 @@ custom_line_plot(df_other, other_avg,"Other Industries")
 
 ```
 
-## Extra Sanso: Decision Tree
+## Joan y Sanso: Decision Tree para salary
 
 ```{r}
 library(rpart)
 library(rpart.plot)
 
-#First we remove some columns that wont apport useful information to the model:
+#First we remove some columns that wont bring useful information to the model:
 
-dfTree <- df
-dfTree$salary_currency <- NULL
+dfTreeRegression <- df
+dfTreeRegression$salary_currency <- NULL
 
-#First we are going to try to predict salary with a regression tree. We are going to eliminate the created "salary_group" column because otherwise it would be kinda cheating
+#We are going to try to predict salary with a regression tree. We are going to eliminate the created "salary_group" column because otherwise it would be kinda cheating since its the value that we are trying to predict.
 
-dfTreeRegression<- dfTree
 dfTreeRegression$salary_group <- NULL
+
+#After making a couple of tests, we saw that these variables are never used by the tree to make predictions, so we are going to remove them from the set so getting the best options for our profiles is easier later:
+
+dfTreeRegression$company_region <- NULL
+dfTreeRegression$employee_region <- NULL
+dfTreeRegression$work_year <- NULL
+dfTreeRegression$research <- NULL
+dfTreeRegression$employment_type <- NULL
+dfTreeRegression$role <- NULL
+dfTreeRegression$boss <- NULL
+
 set.seed(42)
 sample <- sample(c(TRUE, FALSE), nrow(dfTreeRegression), replace=TRUE, prob=c(0.8,0.2))
 Tree_train  <- dfTreeRegression[sample, ]
@@ -329,62 +339,73 @@ Tree_test   <- dfTreeRegression[!sample, ]
 
 ```{r}
 #Con el parametro "cp", cuanto mas proximo a 0, menos poda hace.
-fit <- rpart(salary_in_usd~., data = Tree_train, method="anova", control = list(cp = 0))
-rules1 <- rpart.rules(fit)
+fit <- rpart(salary_in_usd~., data = Tree_train, method="anova", control = list(cp = 0.0001))
+rules <- rpart.rules(fit)
 
 test_pred <- predict(fit, Tree_test, method="anova")
 results <- data.frame(test_pred, Tree_test$salary_in_usd)
-results$residuals <- results$test_pred-results$Tree_test.salary_in_usd
+results$residuals <- results$Tree_test.salary_in_usd-results$test_pred
 plot(results$residuals)
 abline(0,0, col="red")
-mean(results$residuals)
+resmean <- mean(results$residuals)
+abline(resmean,0, col="blue")
 sd(results$residuals)
+nrow(rules)
 ```
+
 ```{r}
-#1: monica. 2: dawid. 3: TODO wallis
-datos <- Tree_test[1,]
-datos[1,] = list(2022,"MI", "FT", "Data Scientist", 0, "ES", "Hybrid", "ES", "S", "Europe", "Europe", "DATA", FALSE, "SCIENTIST", FALSE)
-datos[2,] = list(2022,"MI", "FT", "ML Engineer", 0, "ES", "Hybrid", "ES", "L", "Europe", "Europe", "ML/AI", FALSE, "ENGINEER", FALSE)
+datos_monica <- Tree_test[1,]
+datos_monica[1,] = list("MI", "Data Scientist",0, "ES", "Hybrid", "ES", "S", "DATA")
 options(width=1000)
 
-salarios = rpart.predict(fit, datos)
+salarios = rpart.predict(fit, datos_monica)
 salarios
 ```
-```{r}
-levels(datos$company_location)
-```
 
 ```{r}
-grid <- expand.grid(
-  work_year = c(2022),
+wallis_grid <- expand.grid(
   experience_level = c("EN"),
-  employment_type = levels(datos$employment_type),
   job_title = c("ML Engineer"),
   salary_in_usd = 0,
-  employee_residence = levels(datos$employee_residence),
-  remote_ratio = levels(datos$remote_ratio),
+  employee_residence = c("US"),
+  remote_ratio = levels(df$remote_ratio),
   company_location = c("US"),
-  company_size = levels(datos$company_size),
-  employee_region = c("North America"),
-  company_region = c("North America"),
-  industry = levels(datos$industry),
-  boss = c(FALSE),
-  role = c("ENGINEER"),
-  research = c(FALSE)
+  company_size = levels(df$company_size),
+  industry = c("ML/AI")
 )
-grid
+wallis_grid
 ```
 
 ```{r}
-prediction <- vector("numeric", 6812)
-for(i in 1:nrow(grid)){
-  prediction[i] <- rpart.predict(fit, newdata = grid[i,])
-}
+prediction <- rpart.predict(fit, wallis_grid)
+wallis_max <- max(prediction)
+wallis_best_combinations_index <- which(wallis_max == prediction)
+wallis_best_combinations <- wallis_grid[wallis_best_combinations_index,]
+wallis_best_combinations
+wallis_max
 ```
 
 ```{r}
-best_combination <- grid[which.max(prediction), ]
-best_combination
+dawid_grid <- expand.grid(
+  experience_level = c("MI"),
+  job_title = c("ML Engineer"),
+  salary_in_usd = 0,
+  employee_residence = c("ES"),
+  remote_ratio = c("Remote"),
+  company_location = levels(df$company_location),
+  company_size = levels(df$company_size),
+  industry = levels(df$industry)
+)
+dawid_grid
+```
+
+```{r}
+prediction <- rpart.predict(fit, dawid_grid)
+dawid_max <- max(prediction)
+dawid_best_combinations_index <- which(dawid_max == prediction)
+dawid_best_combinations <- dawid_grid[dawid_best_combinations_index,]
+dawid_best_combinations
+dawid_max
 ```
 
 

@@ -422,7 +422,7 @@ dawid_grid <- expand.grid(
   remote_ratio = c("Remote"),
   company_location = levels(df$company_location),
   company_size = levels(df$company_size),
-  industry = levels(df$industry)
+  industry = c("ML/AI")
 )
 dawid_grid
 ```

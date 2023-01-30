@@ -264,7 +264,7 @@ f
 As we can see, from ENtry level to EXecutive level, as the experience increases, the larger the average salary gets. Lets see if we can find, using clustering, 3 zones for each
 
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 set.seed(42)
 df_split_industry <- split(df, df$industry)
 names(df_split_industry) <- c("df_data", "df_ai", "df_other")
@@ -304,6 +304,34 @@ custom_line_plot(df_ai,ai_avg,"AI/ML Industry")
 custom_line_plot(df_other, other_avg,"Other Industries")
 
 ```
+
+```{r}
+get_increases <- function(dframe){
+  dframe$increase <- 0
+dframe$increase[dframe$Experience_Level=="MI"] <- dframe$Average_Salary[dframe$Experience_Level=="MI"] - dframe$Average_Salary[dframe$Experience_Level=="EN"]
+dframe$increase[dframe$Experience_Level=="SE"] <- dframe$Average_Salary[dframe$Experience_Level=="SE"] - dframe$Average_Salary[dframe$Experience_Level=="MI"]
+dframe$increase[dframe$Experience_Level=="EX"] <- dframe$Average_Salary[dframe$Experience_Level=="EX"] - dframe$Average_Salary[dframe$Experience_Level=="SE"]
+
+dframe$increasePercentage <- 0
+dframe$increasePercentage[dframe$Experience_Level=="MI"] <- dframe$Average_Salary[dframe$Experience_Level=="MI"] / dframe$Average_Salary[dframe$Experience_Level=="EN"]
+dframe$increasePercentage[dframe$Experience_Level=="SE"] <- dframe$Average_Salary[dframe$Experience_Level=="SE"] / dframe$Average_Salary[dframe$Experience_Level=="MI"]
+dframe$increasePercentage[dframe$Experience_Level=="EX"] <- dframe$Average_Salary[dframe$Experience_Level=="EX"] / dframe$Average_Salary[dframe$Experience_Level=="SE"]
+
+dframe$increasePercentage <- ifelse(dframe$Experience_Level=="EN",0,(dframe$increasePercentage - 1) * 100)
+
+return(dframe)
+}
+
+data_avg <- get_increases(data_avg)
+ai_avg <- get_increases(ai_avg)
+other_avg <- get_increases(other_avg)
+
+data_avg
+ai_avg
+other_avg
+```
+
+
 
 ## Joan y Sanso: Decision Tree para salary
 

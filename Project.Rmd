@@ -1,15 +1,21 @@
 ---
 title: "Final Project - Data Mining"
 authors: "Dawid Michal Roch Móll, Jonathan Zinzan Salisbury Vega, Joan Sansó Pericàs, Joan Vilella Candia, Julián Wallis Medina"
-date: Sys.Date()
-output: html_document
+date: 01-02-2023
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+editor_options:
+  markdown:
+    wrap: 80
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(ggplot2)
 library(dplyr)
 library(ggdist)
@@ -28,6 +34,7 @@ library(rpart.plot)
 set.seed(999)
 ```
 
+# Part 1: Data Analysis
 
 ## Exploratory Data Analysis
 
@@ -143,6 +150,8 @@ df$role <- as.factor(df$role)
 
 df$research <- ifelse(grepl("research", df$job_title, ignore.case = T), TRUE, FALSE)
 
+df$job_title[df$job_title == "ML Engineer"] <- "Machine Learning Engineer"
+
 summary(df)
 
 ```
@@ -217,128 +226,11 @@ ggplot(y, aes(x = work_year, y = percentage, group = remote_ratio, color = remot
 
 ```
 
-# Questions
+# Part 2: Context of the problem, Models and Evaluation
 
-## 1. 
-## 2. 
-## 3. Can we predict an employee's salary based on their job title, experience level, and location using machine learning algorithms?
+## 1. Profile-based prediction and maximization of compensation
 
 ```{r}
-
-```
-
-## For us, students who are now finishing their degree. What is the best combination (based on salary)?
-
-```{r}
-# df_Q7 <- df
-# # Make a graphic where experience_level = EN, y axis = salary_in_usd, x axis = country
-# df_Q7 <- df_Q7[df_Q7$experience_level == 'EN',]
-# df_Q7 <- df_Q7[df_Q7$remote_ratio == '0%',]
-# df_Q7 <- df_Q7[df_Q7$boss == 'NO',]
-# df_Q7 <- df_Q7[df_Q7$research == FALSE,]
-# df_Q7 <- df_Q7[df_Q7$role == 'DEVELOPER',]
-# df_Q7 <- df_Q7[df_Q7$work_year == 2022,]
-# df_Q7 <- df_Q7[df_Q7$job_title == 'Software Engineer',]
-# df_Q7 <- df_Q7[df_Q7$company_industry == 'Information Technology and Services',]
-# df_Q7 <- df_Q7[df_Q7$company_sector == 'Information Technology',]
-# 
-# plot(df$remote_ratio, df$salary_in_usd, xlab="Remote Ratio", ylab="Salary in USD")
-# 
-# # Make a graphic where x axis = region, y axis = salary_in_usd
-# plot(df$employee_region, df$salary_in_usd, xlab="employee_region", ylab="Salary in USD")
-```
-
-## 4. How much should the salary increase be when you get promoted to a higher Experience Level? (according to similar colleagues with the same job area).
-
-This could be useful for employees that are going to recieve a promotion, and want
-to know how much they should get paid for their new position.
-It could also be useful for employers that want to know how much they should offer
-new hires or promoting employees.
-
-```{r}
-f <- ggplot(df, aes(x=reorder(experience_level,salary_in_usd), y=salary_in_usd))+
-     geom_boxplot()+
-     ggtitle("Salary Distribution for each experience level") + ylab("Salary (USD)") + xlab("")
-f
-```
-As we can see, from ENtry level to EXecutive level, as the experience increases, the larger the average salary gets. Lets see if we can find, using clustering, 3 zones for each
-
-
-```{r message=FALSE, warning=FALSE, include=FALSE}
-set.seed(42)
-df_split_industry <- split(df, df$industry)
-names(df_split_industry) <- c("df_data", "df_ai", "df_other")
-list2env(df_split_industry, envir = .GlobalEnv)
-
-get_average_level_salary <- function(dFrame){
-  mean_en = mean(dFrame[dFrame$experience_level=="EN","salary_in_usd"])
-  mean_mi = mean(dFrame[dFrame$experience_level=="MI","salary_in_usd"])
-  mean_se = mean(dFrame[dFrame$experience_level=="SE","salary_in_usd"])
-  mean_ex = mean(dFrame[dFrame$experience_level=="EX","salary_in_usd"])
-  ret = data.frame(c("EN","MI","SE","EX"),c(mean_en, mean_mi, mean_se, mean_ex))
-  colnames(ret) <- c("Experience_Level","Average_Salary")
-  ret$Experience_Level = factor(ret$Experience_Level, levels = c("EN","MI","SE","EX"))
-  return(ret)
-}
-
-data_avg = get_average_level_salary(df_data)
-ai_avg = get_average_level_salary(df_ai)
-other_avg = get_average_level_salary(df_other)
-```
-
-```{r}
-
-custom_line_plot <- function(datos,avgs, title){
-  plot1 <- ggplot()+
-            geom_violin(data=datos, aes(x=reorder(experience_level,salary_in_usd), y = salary_in_usd))+ 
-  geom_line(data=avgs,aes(x=Experience_Level, y=Average_Salary, group=1))+
-  geom_point(data=avgs,aes(x=Experience_Level, y=Average_Salary, group=1))+
-  geom_text(data=avgs,aes(x=Experience_Level, y=Average_Salary, label = round(Average_Salary,0)) ,hjust=-0.2, vjust=-1)+
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 15))+
-  labs(title=title)
-  plot1
-}
-
-custom_line_plot(df_data,data_avg,"Data Industry")
-custom_line_plot(df_ai,ai_avg,"AI/ML Industry")
-custom_line_plot(df_other, other_avg,"Other Industries")
-
-```
-
-```{r}
-get_increases <- function(dframe){
-  dframe$increase <- 0
-dframe$increase[dframe$Experience_Level=="MI"] <- dframe$Average_Salary[dframe$Experience_Level=="MI"] - dframe$Average_Salary[dframe$Experience_Level=="EN"]
-dframe$increase[dframe$Experience_Level=="SE"] <- dframe$Average_Salary[dframe$Experience_Level=="SE"] - dframe$Average_Salary[dframe$Experience_Level=="MI"]
-dframe$increase[dframe$Experience_Level=="EX"] <- dframe$Average_Salary[dframe$Experience_Level=="EX"] - dframe$Average_Salary[dframe$Experience_Level=="SE"]
-
-dframe$increasePercentage <- 0
-dframe$increasePercentage[dframe$Experience_Level=="MI"] <- dframe$Average_Salary[dframe$Experience_Level=="MI"] / dframe$Average_Salary[dframe$Experience_Level=="EN"]
-dframe$increasePercentage[dframe$Experience_Level=="SE"] <- dframe$Average_Salary[dframe$Experience_Level=="SE"] / dframe$Average_Salary[dframe$Experience_Level=="MI"]
-dframe$increasePercentage[dframe$Experience_Level=="EX"] <- dframe$Average_Salary[dframe$Experience_Level=="EX"] / dframe$Average_Salary[dframe$Experience_Level=="SE"]
-
-dframe$increasePercentage <- ifelse(dframe$Experience_Level=="EN",0,(dframe$increasePercentage - 1) * 100)
-
-return(dframe)
-}
-
-data_avg <- get_increases(data_avg)
-ai_avg <- get_increases(ai_avg)
-other_avg <- get_increases(other_avg)
-
-data_avg
-ai_avg
-other_avg
-```
-
-
-
-## Joan y Sanso: Decision Tree para salary
-
-```{r}
-library(rpart)
-library(rpart.plot)
-
 #First we remove some columns that wont bring useful information to the model:
 
 dfTreeRegression <- df
@@ -437,10 +329,8 @@ dawid_max
 ```
 
 
-## 5. Do bigger companies pay more to their employees?
-## 6. 
- 
-## 7. Can we predict which employees are at risk of leaving their company?
+
+## 2. How can data mining techniques be used to identify which employees are at risk of leaving their company?
 
 This could be useful for companies who want to retain their top talent and for employees that are underpaid. We could use different factors such to determine which employees are underpaid compared to their peers.
 
@@ -703,7 +593,160 @@ for (i in 1:length(variables)){
 
 ```
 
-## 8. What is more worth, to work in the office at your region or remotely in another region?
+## 3. Employee Seniority: Upward mobility and career growth
+
+Can we predict an employee's experience level based on their salary and job title? Using classification algorithms, we could build a model that predicts an employee's experience level based on their salary and job title. This could be useful for employees and job seekers who want to understand what experience level they can expect to be paid for a given salary and job title. We could also include other factors, such as location and company size, to improve the accuracy of the model.
+
+For this we'll use a Decision Tree since we are interested in having a clear way to visualize and understand the result. We want to classify the experience level of employees based on attributes such as their role, industry for which they work, salary, etcetera.
+
+BASE MODEL: Predict experience level with only salary and job title; since job title is a factor with numerous levels industry and role will be used instead.
+
+```{r}
+df14 = df[, c("industry", "role", "salary_in_usd", "experience_level")]
+dt14 = rpart(experience_level~., data=df14)
+rpart.plot(dt14)
+```
+
+ADVANCED MODEL: Predict experience level with all of the variables available (apart from those which factor level exceeds 32).
+
+```{r}
+df14v2 = df[ , -which(names(df) %in% c("job_title", "work_year", "ID", "company_location", "employee_residence", "employee_region", "company_region", "salary_group", "salary_currency", "remote_ratio"))]
+summary(df14v2)
+dt14v2 = rpart(experience_level~., data=df14v2)
+rpart.plot(dt14v2)
+```
+
+
+## 3.1. How accurately can we predict experience_level within the company using a k-nearest neighbors classification model, while excluding the salary attribute from the dataset?
+
+```{r}
+set.seed(123)
+df_no_s <- df
+df_no_s$salary_group <- NULL
+df_no_s$salary_currency <- NULL
+df_no_s$salary_in_usd <- NULL
+train_index <- createDataPartition(df_no_s$experience_level, p = 0.7, list = FALSE)
+train_data <- df_no_s[train_index, ]
+test_data <- df_no_s[-train_index, ]
+
+```
+
+
+```{r}
+model <- train(experience_level ~ ., data = train_data, method = "knn", tuneGrid = expand.grid(k = 1:20))
+
+```
+
+```{r}
+print(model$bestTune$k)
+summary(model)
+```
+
+
+```{r}
+importance <- varImp(model)
+plot(importance)
+
+```
+
+
+```{r}
+predictions <- predict(model, test_data)
+cMatrix <- confusionMatrix(predictions, test_data$experience_level)
+cMatrix
+cMatrix$byClass[1]
+```
+
+
+## 
+
+## Failed 1. How much should the salary increase be when you get promoted to a higher Experience Level? (according to similar colleagues with the same job area).
+
+This could be useful for employees that are going to recieve a promotion, and want
+to know how much they should get paid for their new position.
+It could also be useful for employers that want to know how much they should offer
+new hires or promoting employees.
+
+```{r}
+f <- ggplot(df, aes(x=reorder(experience_level,salary_in_usd), y=salary_in_usd))+
+     geom_boxplot()+
+     ggtitle("Salary Distribution for each experience level") + ylab("Salary (USD)") + xlab("")
+f
+```
+As we can see, from ENtry level to EXecutive level, as the experience increases, the larger the average salary gets. Lets see if we can find, using clustering, 3 zones for each
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+set.seed(42)
+df_split_industry <- split(df, df$industry)
+names(df_split_industry) <- c("df_data", "df_ai", "df_other")
+list2env(df_split_industry, envir = .GlobalEnv)
+
+get_average_level_salary <- function(dFrame){
+  mean_en = mean(dFrame[dFrame$experience_level=="EN","salary_in_usd"])
+  mean_mi = mean(dFrame[dFrame$experience_level=="MI","salary_in_usd"])
+  mean_se = mean(dFrame[dFrame$experience_level=="SE","salary_in_usd"])
+  mean_ex = mean(dFrame[dFrame$experience_level=="EX","salary_in_usd"])
+  ret = data.frame(c("EN","MI","SE","EX"),c(mean_en, mean_mi, mean_se, mean_ex))
+  colnames(ret) <- c("Experience_Level","Average_Salary")
+  ret$Experience_Level = factor(ret$Experience_Level, levels = c("EN","MI","SE","EX"))
+  return(ret)
+}
+
+data_avg = get_average_level_salary(df_data)
+ai_avg = get_average_level_salary(df_ai)
+other_avg = get_average_level_salary(df_other)
+```
+
+```{r}
+
+custom_line_plot <- function(datos,avgs, title){
+  plot1 <- ggplot()+
+            geom_violin(data=datos, aes(x=reorder(experience_level,salary_in_usd), y = salary_in_usd))+ 
+  geom_line(data=avgs,aes(x=Experience_Level, y=Average_Salary, group=1))+
+  geom_point(data=avgs,aes(x=Experience_Level, y=Average_Salary, group=1))+
+  geom_text(data=avgs,aes(x=Experience_Level, y=Average_Salary, label = round(Average_Salary,0)) ,hjust=-0.2, vjust=-1)+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 15))+
+  labs(title=title)
+  plot1
+}
+
+custom_line_plot(df_data,data_avg,"Data Industry")
+custom_line_plot(df_ai,ai_avg,"AI/ML Industry")
+custom_line_plot(df_other, other_avg,"Other Industries")
+
+```
+
+```{r}
+get_increases <- function(dframe){
+  dframe$increase <- 0
+dframe$increase[dframe$Experience_Level=="MI"] <- dframe$Average_Salary[dframe$Experience_Level=="MI"] - dframe$Average_Salary[dframe$Experience_Level=="EN"]
+dframe$increase[dframe$Experience_Level=="SE"] <- dframe$Average_Salary[dframe$Experience_Level=="SE"] - dframe$Average_Salary[dframe$Experience_Level=="MI"]
+dframe$increase[dframe$Experience_Level=="EX"] <- dframe$Average_Salary[dframe$Experience_Level=="EX"] - dframe$Average_Salary[dframe$Experience_Level=="SE"]
+
+dframe$increasePercentage <- 0
+dframe$increasePercentage[dframe$Experience_Level=="MI"] <- dframe$Average_Salary[dframe$Experience_Level=="MI"] / dframe$Average_Salary[dframe$Experience_Level=="EN"]
+dframe$increasePercentage[dframe$Experience_Level=="SE"] <- dframe$Average_Salary[dframe$Experience_Level=="SE"] / dframe$Average_Salary[dframe$Experience_Level=="MI"]
+dframe$increasePercentage[dframe$Experience_Level=="EX"] <- dframe$Average_Salary[dframe$Experience_Level=="EX"] / dframe$Average_Salary[dframe$Experience_Level=="SE"]
+
+dframe$increasePercentage <- ifelse(dframe$Experience_Level=="EN",0,(dframe$increasePercentage - 1) * 100)
+
+return(dframe)
+}
+
+data_avg <- get_increases(data_avg)
+ai_avg <- get_increases(ai_avg)
+other_avg <- get_increases(other_avg)
+
+data_avg
+ai_avg
+other_avg
+```
+
+ 
+
+
+## Failed 2. What is more worth, to work in the office at your region or remotely in another region?
 
 First we should have a look at how much are employees paid while working in the office at their same region.
 
@@ -789,53 +832,8 @@ sankeyNetwork(Links = data_long, Nodes = nodes,
                      sinksRight=FALSE, nodeWidth=40, fontSize=13, nodePadding=20)
 ```
 
-EXTRA JONATHAN
 
-What factors seem to have the most impact on determining an employee's job level within the company, as indicated by the data provided in the dataset?
-
-```{r}
-set.seed(123)
-df_no_s <- df
-df_no_s$salary_group <- NULL
-df_no_s$salary_currency <- NULL
-df_no_s$salary_in_usd <- NULL
-train_index <- createDataPartition(df_no_s$experience_level, p = 0.7, list = FALSE)
-train_data <- df_no_s[train_index, ]
-test_data <- df_no_s[-train_index, ]
-
-```
-
-
-```{r}
-model <- train(experience_level ~ ., data = train_data, method = "knn", tuneGrid = expand.grid(k = 1:20))
-
-```
-
-```{r}
-print(model$bestTune$k)
-summary(model)
-```
-
-
-```{r}
-importance <- varImp(model)
-plot(importance)
-
-```
-
-
-```{r}
-predictions <- predict(model, test_data)
-confusionMatrix(predictions, test_data$experience_level)
-confusionMatrix$byClass[1]
-```
-
-
-## 9. 
-## 10. 
-## 11. 
-## 12.
-## 13. Can we identify salary disparities based on residence and other demographic factors?
+## Failed 3. Can we identify salary disparities based on residence and other demographic factors?
 
 For this we'll use visualization techniques with the ggplot library. The width of the boxes depends on the amount of samples each class/value has so we can extract better conclusions out of them.
 ```{r}
@@ -914,30 +912,8 @@ net_increase
 
 It seems like the increase in salaries between 2021 and 2022 is not explained only with the inflation, since the increase has been of over a 34% in total and the official 2022 inflation rate that the US government gives is ay 7.7%. The net salary increase taking that into account (most samples of the data are US based), net salaries have increased a 27.17%.
 
-## 14. Can we predict an employee's experience level based on their salary and job title? Using classification algorithms, we could build a model that predicts an employee's experience level based on their salary and job title. This could be useful for employees and job seekers who want to understand what experience level they can expect to be paid for a given salary and job title. We could also include other factors, such as location and company size, to improve the accuracy of the model.
 
-For this we'll use a Decision Tree since we are interested in having a clear way to visualize and understand the result. We want to classify the experience level of employees based on attributes such as their role, industry for which they work, salary, etcetera.
-
-BASE MODEL: Predict experience level with only salary and job title; since job title is a factor with numerous levels industry and role will be used instead.
-
-```{r}
-df14 = df[, c("industry", "role", "salary_in_usd", "experience_level")]
-dt14 = rpart(experience_level~., data=df14)
-rpart.plot(dt14)
-```
-
-ADVANCED MODEL: Predict experience level with all of the variables available (apart from those which factor level exceeds 32).
-
-```{r}
-df14v2 = df[ , -which(names(df) %in% c("job_title", "work_year", "ID", "company_location", "employee_residence", "employee_region", "company_region", "salary_group", "salary_currency", "remote_ratio"))]
-summary(df14v2)
-dt14v2 = rpart(experience_level~., data=df14v2)
-rpart.plot(dt14v2)
-```
-
-## 15. 
-
-## INTENTO FALLIDO. Join cost of living index dataset into problem dataset
+## Failed 4. Join cost of living index dataset into problem dataset
 
 We only want the country and the cost of living and we delete Kosovo from the list since it is a disputed territory and luckily enough we don't have any Kosovo related data in our dataset
 ```{r}

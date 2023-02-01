@@ -19,7 +19,7 @@ library(plotly)
 library(networkD3)
 library(scales)
 library(reshape)
-#library(klaR)
+library(klaR)
 library(countrycode)
 library(ISLR)
 library(rpart)
@@ -795,7 +795,10 @@ What factors seem to have the most impact on determining an employee's job level
 
 ```{r}
 set.seed(123)
-df_no_s <- select(df, -salary_group, -salary_currency, -salary_in_usd)
+df_no_s <- df
+df_no_s$salary_group <- NULL
+df_no_s$salary_currency <- NULL
+df_no_s$salary_in_usd <- NULL
 train_index <- createDataPartition(df_no_s$experience_level, p = 0.7, list = FALSE)
 train_data <- df_no_s[train_index, ]
 test_data <- df_no_s[-train_index, ]
@@ -825,7 +828,6 @@ plot(importance)
 predictions <- predict(model, test_data)
 confusionMatrix(predictions, test_data$experience_level)
 confusionMatrix$byClass[1]
-```
 ```
 
 
